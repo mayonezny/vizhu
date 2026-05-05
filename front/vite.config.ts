@@ -83,6 +83,15 @@ export default defineConfig(async ({ mode }) => {
       },
     },
 
+    // ─── SCSS ─────────────────────────────────────────────────────────────
+    css: {
+      preprocessorOptions: {
+        scss: {
+          loadPaths: [resolve(__dirname, 'src')],
+        },
+      },
+    },
+
     // ─── Preview (vite preview) ───────────────────────────────────────────
     preview: {
       port: 4173,
