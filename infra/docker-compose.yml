@@ -16,7 +16,7 @@ services:
 
   nginx:
     image: nginx:1.25-alpine
-    container_name: viju_nginx
+    container_name: vizhu_nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -30,15 +30,15 @@ services:
     networks:
       - frontend_net
     depends_on:
-      - pwa
+      - front
       - api
 
-  pwa:
+  front:
     build:
-      context: ../pwa
+      context: ../front
       dockerfile: Dockerfile
       target: production
-    container_name: viju_pwa
+    container_name: vizhu_front
     restart: unless-stopped
     networks:
       - frontend_net
@@ -48,7 +48,7 @@ services:
       context: ../api
       dockerfile: Dockerfile
       target: production
-    container_name: viju_api
+    container_name: vizhu_api
     restart: unless-stopped
     networks:
       - frontend_net
@@ -56,7 +56,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://viju:${POSTGRES_PASSWORD}@postgres:5432/viju
+      DATABASE_URL: postgresql://vizhu:${POSTGRES_PASSWORD}@postgres:5432/vizhu
       REDIS_URL: redis://redis:6379
       AI_SERVICE_URL: http://ai:8000
       JWT_SECRET: ${JWT_SECRET}
@@ -77,7 +77,7 @@ services:
     build:
       context: ../ai
       dockerfile: Dockerfile
-    container_name: viju_ai
+    container_name: vizhu_ai
     restart: unless-stopped
     networks:
       - backend_net
@@ -98,25 +98,25 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: viju_postgres
+    container_name: vizhu_postgres
     restart: unless-stopped
     networks:
       - backend_net
     environment:
-      POSTGRES_DB: viju
-      POSTGRES_USER: viju
+      POSTGRES_DB: vizhu
+      POSTGRES_USER: vizhu
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U viju -d viju"]
+      test: ["CMD-SHELL", "pg_isready -U vizhu -d vizhu"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: viju_redis
+    container_name: vizhu_redis
     restart: unless-stopped
     networks:
       - backend_net
@@ -131,7 +131,7 @@ services:
 
   certbot:
     image: certbot/certbot:latest
-    container_name: viju_certbot
+    container_name: vizhu_certbot
     volumes:
       - certbot_conf:/etc/letsencrypt
       - certbot_www:/var/www/certbot

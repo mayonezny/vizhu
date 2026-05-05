@@ -6,12 +6,12 @@
 Internet :80/:443
     ↓
 nginx (reverse proxy + SSL)
-    ├── /         → pwa:80   (React статика)
+    ├── /         → front:80 (React статика)
     ├── /api/     → api:3000 (NestJS)
     ├── /ws/      → api:3000 (WebSocket)
     └── /rtc/     → api:3000 (WebRTC сигналинг)
 
-frontend_net: nginx ↔ pwa, nginx ↔ api
+frontend_net: nginx ↔ front, nginx ↔ api
 backend_net:  api ↔ ai ↔ postgres ↔ redis
               (ai снаружи недоступен!)
 ```
@@ -29,7 +29,7 @@ cp .env.example .env
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-- http://localhost — PWA (Vite HMR работает)
+- http://localhost — front (Vite HMR работает)
 - http://localhost/api — NestJS API
 - http://localhost:8000/docs — FastAPI Swagger (только в dev)
 
@@ -69,8 +69,8 @@ sudo ufw enable
 ### 2. Клонируем репо
 
 ```bash
-git clone https://github.com/ВАШ_ORG/viju /opt/viju
-cd /opt/viju/infra
+git clone https://github.com/ВАШ_ORG/vizhu /opt/vizhu
+cd /opt/vizhu/infra
 cp .env.example .env
 nano .env  # заполни все переменные
 ```
@@ -120,9 +120,9 @@ docker compose logs -f
 
 Генерация ключа (на локалке):
 ```bash
-ssh-keygen -t ed25519 -C "viju-deploy" -f ~/.ssh/viju_deploy
-ssh-copy-id -i ~/.ssh/viju_deploy.pub ubuntu@YOUR_IP
-cat ~/.ssh/viju_deploy  # это вставляешь в VPS_SSH_KEY
+ssh-keygen -t ed25519 -C "vizhu-deploy" -f ~/.ssh/vizhu_deploy
+ssh-copy-id -i ~/.ssh/vizhu_deploy.pub ubuntu@YOUR_IP
+cat ~/.ssh/vizhu_deploy  # это вставляешь в VPS_SSH_KEY
 ```
 
 После этого каждый push в `main`:

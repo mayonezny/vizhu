@@ -4,7 +4,7 @@
 viju/
 ├── infra/      — docker-compose, nginx, CI/CD, скрипты
 ├── api/        — NestJS основной бэкенд
-├── pwa/        — React/Vite PWA
+├── front/      — React/Vite front
 └── ai/         — FastAPI AI-микросервис
 ```
 
