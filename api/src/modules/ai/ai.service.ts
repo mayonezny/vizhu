@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
 export type DescribeMode = 'short' | 'detailed';
-export type AiTask = 'describe' | 'currency' | 'ocr';
 
 @Injectable()
 export class AiService {
@@ -18,8 +17,11 @@ export class AiService {
     this.aiUrl = this.config.get<string>('AI_SERVICE_URL', 'http://ai:8000');
   }
 
-  // ФТ-1: описание сцены
-  async describeScene(imageBuffer: Buffer, mimeType: string, mode: DescribeMode) {
+  async describeScene(
+    imageBuffer: Buffer,
+    mimeType: string,
+    mode: DescribeMode,
+  ): Promise<unknown> {
     return this.callAi('/describe', {
       image: imageBuffer.toString('base64'),
       mime_type: mimeType,
@@ -27,30 +29,32 @@ export class AiService {
     });
   }
 
-  // ФТ-3: распознавание купюр
-  async recognizeCurrency(imageBuffer: Buffer, mimeType: string) {
+  async recognizeCurrency(
+    imageBuffer: Buffer,
+    mimeType: string,
+  ): Promise<unknown> {
     return this.callAi('/currency', {
       image: imageBuffer.toString('base64'),
       mime_type: mimeType,
     });
   }
 
-  // ФТ-2: OCR
-  async extractText(imageBuffer: Buffer, mimeType: string) {
+  async extractText(imageBuffer: Buffer, mimeType: string): Promise<unknown> {
     return this.callAi('/ocr', {
       image: imageBuffer.toString('base64'),
       mime_type: mimeType,
     });
   }
 
-  private async callAi(path: string, body: object) {
+  private async callAi(path: string, body: object): Promise<unknown> {
     try {
       const response = await firstValueFrom(
-        this.http.post(`${this.aiUrl}${path}`, body),
+        this.http.post<unknown>(`${this.aiUrl}${path}`, body),
       );
       return response.data;
     } catch (error) {
-      this.logger.error(`AI service error on ${path}:`, error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`AI service error on ${path}: ${message}`);
       throw error;
     }
   }

@@ -1,4 +1,3 @@
-// ФТ-14: история запросов
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HistoryController } from './history.controller';
