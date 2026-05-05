@@ -5,3 +5,4 @@ Pillow==10.3.0
 python-dotenv==1.0.1
 pydantic==2.7.0
 redis==5.0.4
+gigachat>=0.2.1

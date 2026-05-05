@@ -20,8 +20,8 @@ async def describe_scene(body: DescribeRequest):
             if body.mode == "short"
             else "Подробно опиши всё что видишь на фото."
         )
-        text = await gigachat.vision(body.image, body.mime_type, prompt)
-        return DescribeResponse(text=text, model="gigachat")
+        text, model = await gigachat.vision(body.image, body.mime_type, prompt)
+        return DescribeResponse(text=text, model=model)
     except Exception as e:
         logger.error(f"describe error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
