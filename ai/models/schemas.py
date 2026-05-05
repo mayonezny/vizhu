@@ -1,0 +1,26 @@
+from pydantic import BaseModel
+from typing import Literal
+
+
+class ImageRequest(BaseModel):
+    image: str        # base64
+    mime_type: str    # image/jpeg, image/png, etc.
+
+
+class DescribeRequest(ImageRequest):
+    mode: Literal["short", "detailed"] = "short"
+
+
+class DescribeResponse(BaseModel):
+    text: str         # текст описания
+    model: str        # какая модель ответила
+
+
+class CurrencyResponse(BaseModel):
+    amount: str       # "1000 рублей"
+    confidence: float
+
+
+class OcrResponse(BaseModel):
+    text: str
+    model: str

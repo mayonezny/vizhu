@@ -1,0 +1,26 @@
+# Env
+.env
+*.env.local
+
+# SSL ключи — никогда не коммитить
+infra/nginx/ssl/
+*.key
+*.crt
+*.pem
+
+# Node
+node_modules/
+dist/
+.next/
+
+# Python
+ai/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+*.DS_Store
