@@ -2,122 +2,50 @@ import httpx
 import os
 import base64
 import logging
-import json
-import asyncio
 
 logger = logging.getLogger(__name__)
 
 MIME_TO_FORMAT = {
-    "audio/ogg":   "OGG_OPUS",
-    "audio/webm":  "WEBM_OPUS",
-    "audio/wav":   "LINEAR16_PCM",
-    "audio/x-wav": "LINEAR16_PCM",
-    "audio/mp3":   "MP3",
-    "audio/mpeg":  "MP3",
+    "audio/webm":  "oggopus",
+    "audio/ogg":   "oggopus",
+    "audio/wav":   "lpcm",
+    "audio/x-wav": "lpcm",
+    "audio/mpeg":  "mp3",
+    "audio/mp3":   "mp3",
 }
 
 
 class YandexSttService:
-    RECOGNIZE_URL = "https://stt.api.cloud.yandex.net/stt/v3/recognizeFileAsync"
-    OPERATION_URL = "https://operation.api.cloud.yandex.net/operations/{operation_id}"
-    RESULT_URL    = "https://stt.api.cloud.yandex.net/stt/v3/getRecognition"
+    API_URL = "https://stt.api.cloud.yandex.net/speech/v1/stt:recognize"
 
     def __init__(self):
         self.folder_id = os.environ["YANDEX_FOLDER_ID"]
-        self.api_key   = os.environ["YANDEX_API_KEY"]
-
-    @property
-    def _headers(self):
-        return {
-            "Authorization": f"Api-key {self.api_key}",
-            "x-folder-id": self.folder_id,
-        }
+        self.api_key = os.environ["YANDEX_API_KEY"]
 
     async def recognize(self, audio_base64: str, mime_type: str, lang: str = "ru-RU") -> str:
-        audio_format = MIME_TO_FORMAT.get(mime_type, "OGG_OPUS")
+        audio_bytes = base64.b64decode(audio_base64)
+        audio_format = MIME_TO_FORMAT.get(mime_type, "oggopus")
 
-        payload = {
-            "content": audio_base64,
-            "recognitionModel": {
-                "model": "general",
-                "audioFormat": {
-                    "containerAudio": {
-                        "containerAudioType": audio_format
-                    }
-                },
-                "languageRestriction": {
-                    "restrictionType": "WHITELIST",
-                    "languageCode": [lang]
-                },
-                "textNormalization": {
-                    "textNormalization": "TEXT_NORMALIZATION_ENABLED",
-                    "profanityFilter": False,
-                    "literatureText": True
-                }
-            }
+        params = {
+            "lang": lang,
+            "format": audio_format
         }
 
+        if audio_format == "lpcm":
+            params["sampleRateHertz"] = 48000
+
         async with httpx.AsyncClient() as client:
-            # 1. Отправляем файл — получаем operation_id
             response = await client.post(
-                self.RECOGNIZE_URL,
-                headers=self._headers,
-                json=payload,
+                self.API_URL,
+                headers={
+                    "Authorization": f"Api-key {self.api_key}",
+                    "x-data-logging-enabled": "false",
+                    "x-folder-id": self.folder_id,
+                },
+                content=audio_bytes,
+                params=params,
                 timeout=15.0,
             )
             response.raise_for_status()
-            operation_id = response.json().get("id")
-            if not operation_id:
-                raise ValueError("Яндекс не вернул operation_id")
 
-            logger.info(f"STT operation_id: {operation_id}")
-
-            # 2. Polling — ждём пока операция завершится
-            for attempt in range(20):  # максимум 20 попыток по 2 сек = 40 сек
-                await asyncio.sleep(2)
-
-                op_response = await client.get(
-                    self.OPERATION_URL.format(operation_id=operation_id),
-                    headers=self._headers,
-                    timeout=10.0,
-                )
-                op_response.raise_for_status()
-                op_data = op_response.json()
-
-                if op_data.get("done"):
-                    if "error" in op_data:
-                        raise ValueError(f"STT операция завершилась с ошибкой: {op_data['error']}")
-                    break
-            else:
-                raise TimeoutError("STT операция не завершилась за 40 секунд")
-
-            # 3. Забираем результат
-            result_response = await client.get(
-                self.RESULT_URL,
-                headers=self._headers,
-                params={"operation_id": operation_id},
-                timeout=10.0,
-            )
-            result_response.raise_for_status()
-
-        # Парсим построчный JSON
-        text_parts = []
-        for line in result_response.text.strip().split("\n"):
-            if not line:
-                continue
-            try:
-                chunk = json.loads(line)
-                alternatives = (
-                    chunk.get("result", {})
-                    .get("finalRefinement", {})
-                    .get("normalizedText", {})
-                    .get("alternatives", [])
-                )
-                for alt in alternatives:
-                    text = alt.get("text", "")
-                    if text:
-                        text_parts.append(text)
-            except json.JSONDecodeError:
-                continue
-
-        return " ".join(text_parts)
+        return response.json().get("result", "")
