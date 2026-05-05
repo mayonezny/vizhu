@@ -1,0 +1,9 @@
+// Используется только ESLint для type-aware линтинга.
+// Шире чем tsconfig.app.json: включает tests/ для линтинга Playwright-спеков.
+// Конфиг-файлы (vite.config.ts и др.) линтятся отдельным блоком в eslint.config.js
+// через tsconfig.node.json — у них Node.js-контекст, а не браузерный.
+{
+  "extends": "./tsconfig.app.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "build"]
+}

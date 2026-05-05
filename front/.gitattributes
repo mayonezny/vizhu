@@ -1,0 +1,16 @@
+# Normalize line endings to LF in the repo, regardless of OS.
+# On Windows, Git will check out LF (not convert to CRLF).
+* text=auto eol=lf
+
+# Force binary files to never be modified
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary

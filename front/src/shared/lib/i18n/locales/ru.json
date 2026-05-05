@@ -1,0 +1,40 @@
+{
+  "common": {
+    "loading": "Загрузка…",
+    "error": "Произошла ошибка",
+    "retry": "Повторить",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "noData": "Нет данных"
+  },
+  "demo": {
+    "title": "Template Demo",
+    "subtitle": "Демонстрация TanStack Query v5 + Zustand v5 + react-hook-form в архитектуре Feature Sliced Design.",
+    "counter": {
+      "heading": "Клиентское состояние",
+      "step": "Шаг",
+      "reset": "Сбросить",
+      "hint": "Откройте Redux DevTools → Counter, чтобы следить за состоянием стора."
+    },
+    "posts": {
+      "heading": "Серверное состояние",
+      "loading": "Загрузка постов",
+      "retry": "Повторить"
+    },
+    "form": {
+      "heading": "react-hook-form + zod",
+      "titleLabel": "Заголовок",
+      "titlePlaceholder": "Минимум 5 символов…",
+      "titleMin": "Минимум 5 символов",
+      "bodyLabel": "Текст поста",
+      "bodyPlaceholder": "Минимум 10 символов…",
+      "bodyMin": "Минимум 10 символов",
+      "submit": "Создать пост",
+      "submitting": "Отправка…",
+      "successToast": "Пост создан!",
+      "errorToast": "Ошибка при создании",
+      "lastSubmit": "Последняя отправка: {{date}}"
+    }
+  }
+}

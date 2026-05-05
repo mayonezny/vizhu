@@ -1,0 +1,379 @@
+.demo-widget {
+  padding: var(--pad-xl);
+  max-width: 900px;
+  margin: 0 auto;
+
+  &__page-title {
+    font-size: var(--fs-3xl);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    margin: 0 0 var(--space-2);
+  }
+
+  &__subtitle {
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-8);
+    font-size: var(--fs-sm);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: var(--space-6);
+  }
+
+  // ─── Card ────────────────────────────────────────────────────────────────
+
+  &__card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--pad-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  &__card-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-lg);
+    font-weight: var(--fw-semibold);
+    margin: 0;
+  }
+
+  // ─── Badge ───────────────────────────────────────────────────────────────
+
+  &__badge {
+    font-size: var(--fs-2xs);
+    font-weight: var(--fw-semibold);
+    padding: 2px 8px;
+    border-radius: 100px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+
+    &--zustand {
+      background: color-mix(in oklab, #ff7849 15%, transparent);
+      color: #ff7849;
+    }
+
+    &--query {
+      background: color-mix(in oklab, #ef4444 15%, transparent);
+      color: #ef4444;
+    }
+
+    &--form {
+      background: color-mix(in oklab, #8b5cf6 15%, transparent);
+      color: #8b5cf6;
+    }
+  }
+
+  // ─── Counter ─────────────────────────────────────────────────────────────
+
+  &__counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+  }
+
+  &__count {
+    font-size: var(--fs-4xl);
+    font-weight: var(--fw-bold);
+    color: var(--color-primary);
+    min-width: 3ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__step-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  &__hint {
+    font-size: var(--fs-2xs);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  // ─── Buttons ─────────────────────────────────────────────────────────────
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    transition:
+      background 0.15s,
+      color 0.15s,
+      opacity 0.15s;
+    cursor: pointer;
+
+    &--primary {
+      background: var(--color-primary);
+      color: #fff;
+      padding: var(--pad-xs) var(--pad-md);
+      border: none;
+
+      &:hover:not(:disabled) {
+        background: var(--color-primary-hover);
+      }
+
+      &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+    }
+
+    &--ghost {
+      background: transparent;
+      color: var(--color-text-muted);
+      padding: var(--pad-xs) var(--pad-sm);
+      border: 1px solid var(--color-border);
+
+      &:hover {
+        background: var(--color-surface-2);
+        color: var(--color-text);
+      }
+    }
+
+    &--icon {
+      background: var(--color-surface-2);
+      color: var(--color-text);
+      width: 40px;
+      height: 40px;
+      font-size: var(--fs-xl);
+      border: 1px solid var(--color-border);
+
+      &:hover {
+        background: var(--color-border);
+      }
+    }
+  }
+
+  // ─── Form ────────────────────────────────────────────────────────────────
+
+  &__form {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  &__input {
+    flex: 1;
+    padding: var(--pad-xs) var(--pad-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+    color: var(--color-text);
+    transition: border-color 0.15s;
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-ghost);
+    }
+
+    &--narrow {
+      flex: 0 0 64px;
+      text-align: center;
+    }
+
+    &--invalid {
+      border-color: var(--color-danger);
+
+      &:focus-visible {
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-danger) 20%, transparent);
+      }
+    }
+  }
+
+  // ─── Стековая форма (react-hook-form) ─────────────────────────────────────
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  &__field-error {
+    font-size: var(--fs-2xs);
+    color: var(--color-danger);
+  }
+
+  &__textarea {
+    padding: var(--pad-xs) var(--pad-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+    color: var(--color-text);
+    font-family: inherit;
+    min-height: 80px;
+    resize: vertical;
+    transition: border-color 0.15s;
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-ghost);
+    }
+
+    &--invalid {
+      border-color: var(--color-danger);
+
+      &:focus-visible {
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-danger) 20%, transparent);
+      }
+    }
+  }
+
+  &__label {
+    font-size: var(--fs-sm);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  // ─── States ───────────────────────────────────────────────────────────────
+
+  &__success {
+    font-size: var(--fs-sm);
+    color: var(--color-success);
+    margin: 0;
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--pad-sm);
+    background: color-mix(in oklab, var(--color-danger) 10%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-danger) 30%, transparent);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+    color: var(--color-danger);
+  }
+
+  // ─── Skeleton ─────────────────────────────────────────────────────────────
+
+  &__skeleton-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__skeleton-item {
+    height: 48px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(
+      90deg,
+      var(--color-surface) 25%,
+      var(--color-surface-2) 50%,
+      var(--color-surface) 75%
+    );
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+
+  // ─── List ─────────────────────────────────────────────────────────────────
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--pad-sm) var(--pad-md);
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+      background 0.12s,
+      border-color 0.12s;
+
+    &:hover {
+      background: var(--color-surface-2);
+    }
+
+    &--active {
+      background: var(--color-primary-ghost);
+      border-color: color-mix(in oklab, var(--color-primary) 30%, transparent);
+    }
+  }
+
+  &__item-id {
+    font-size: var(--fs-2xs);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text-muted);
+    min-width: 2.5ch;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__item-title {
+    font-size: var(--fs-sm);
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // ─── Detail ───────────────────────────────────────────────────────────────
+
+  &__detail {
+    padding: var(--pad-md);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    transition: opacity 0.2s;
+
+    &--loading {
+      opacity: 0.5;
+    }
+  }
+
+  &__detail-title {
+    font-size: var(--fs-md);
+    font-weight: var(--fw-semibold);
+    margin: 0 0 var(--space-2);
+  }
+
+  &__detail-body {
+    font-size: var(--fs-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: var(--lh-relaxed);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

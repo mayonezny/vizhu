@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/assets/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frontend Template</title>
+
+    <style>
+      /* ─── App Preloader ──────────────────────────────────────────────────
+         Shown while JS loads. React removes it on mount via main.tsx.
+         Uses only CSS — no JS dependency, works even if bundle fails to load.
+      ──────────────────────────────────────────────────────────────────── */
+      :root {
+        --pre-bg: #0b0f14;
+        --pre-surface: #121922;
+        --pre-shimmer: #1d2939;
+        --pre-accent: #f97316;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --pre-bg: #ffffff;
+          --pre-surface: #f2f4f7;
+          --pre-shimmer: #e4e7ec;
+          --pre-accent: #f97316;
+        }
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--pre-bg);
+      }
+
+      #app-preloader {
+        position: fixed;
+        inset: 0;
+        background: var(--pre-bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        z-index: 9999;
+        transition:
+          opacity 0.35s ease,
+          visibility 0.35s ease;
+      }
+
+      #app-preloader.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      /* Logo pulse */
+      .pre-logo {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: var(--pre-accent);
+        animation: pre-pulse 1.6s ease-in-out infinite;
+        flex-shrink: 0;
+      }
+
+      @keyframes pre-pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.6;
+          transform: scale(0.92);
+        }
+      }
+
+      /* Skeleton cards */
+      .pre-skeleton {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: min(480px, 88vw);
+      }
+
+      .pre-bar {
+        border-radius: 6px;
+        background: linear-gradient(
+          90deg,
+          var(--pre-surface) 25%,
+          var(--pre-shimmer) 50%,
+          var(--pre-surface) 75%
+        );
+        background-size: 400% 100%;
+        animation: pre-shimmer 1.5s ease infinite;
+      }
+
+      @keyframes pre-shimmer {
+        0% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      /* Individual bar sizes */
+      .pre-bar--title {
+        height: 28px;
+        width: 38%;
+      }
+      .pre-bar--nav {
+        height: 16px;
+        width: 72%;
+        margin-bottom: 8px;
+      }
+      .pre-bar--card {
+        height: 96px;
+        border-radius: 12px;
+        animation-delay: 0.1s;
+      }
+      .pre-bar--card-sm {
+        height: 72px;
+        border-radius: 12px;
+        animation-delay: 0.2s;
+      }
+      .pre-bar--text {
+        height: 14px;
+        width: 85%;
+        animation-delay: 0.15s;
+      }
+      .pre-bar--text-short {
+        height: 14px;
+        width: 55%;
+        animation-delay: 0.25s;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Static preloader — removed by React after mount (see main.tsx) -->
+    <div id="app-preloader" aria-hidden="true" aria-label="Loading application">
+      <div class="pre-logo"></div>
+      <div class="pre-skeleton">
+        <div class="pre-bar pre-bar--title"></div>
+        <div class="pre-bar pre-bar--nav"></div>
+        <div class="pre-bar pre-bar--card"></div>
+        <div class="pre-bar pre-bar--card-sm"></div>
+        <div class="pre-bar pre-bar--text"></div>
+        <div class="pre-bar pre-bar--text-short"></div>
+      </div>
+    </div>
+
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>

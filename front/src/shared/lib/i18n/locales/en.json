@@ -1,0 +1,40 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "noData": "No data"
+  },
+  "demo": {
+    "title": "Template Demo",
+    "subtitle": "Showcasing TanStack Query v5 + Zustand v5 + react-hook-form in a Feature Sliced Design architecture.",
+    "counter": {
+      "heading": "Client State",
+      "step": "Step",
+      "reset": "Reset",
+      "hint": "Open Redux DevTools → Counter to inspect the store state."
+    },
+    "posts": {
+      "heading": "Server State",
+      "loading": "Loading posts",
+      "retry": "Retry"
+    },
+    "form": {
+      "heading": "react-hook-form + zod",
+      "titleLabel": "Title",
+      "titlePlaceholder": "At least 5 characters…",
+      "titleMin": "At least 5 characters",
+      "bodyLabel": "Post body",
+      "bodyPlaceholder": "At least 10 characters…",
+      "bodyMin": "At least 10 characters",
+      "submit": "Create post",
+      "submitting": "Submitting…",
+      "successToast": "Post created!",
+      "errorToast": "Failed to create",
+      "lastSubmit": "Last submitted: {{date}}"
+    }
+  }
+}
