@@ -165,9 +165,29 @@ html {
 body {
   margin: 0;
   font-family: var(--font-sans);
+  font-size: calc(1rem * var(--text-scale, 1));
   line-height: var(--lh-normal);
   background: var(--color-bg);
   color: var(--color-text);
+}
+
+[data-high-contrast='true'] {
+  --color-bg: #000;
+  --color-surface: #0a0a0a;
+  --color-surface-2: #111;
+  --color-text: #ffff00;
+  --color-text-muted: #e0e000;
+  --color-border: #555;
+  --color-primary: #fff;
+  --color-primary-hover: #e0e0e0;
+  --color-focus: #fff;
+}
+
+[data-reduce-motion='true'] * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }
 
 img,
