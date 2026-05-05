@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react-swc';
 import { resolve } from 'node:path';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(async ({ mode }) => {
   // Загружаем .env.{mode} чтобы переменные были доступны на этапе конфигурации
@@ -16,8 +17,38 @@ export default defineConfig(async ({ mode }) => {
     );
   }
 
+  const pwaPlugin = VitePWA({
+    registerType: 'autoUpdate',
+
+    includeAssets: ['favicon.ico', 'icons/*.png'],
+
+    manifest: false,
+
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+
+      runtimeCaching: [
+        {
+          urlPattern: /^https:\/\/api\./,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'api-cache',
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60 * 24 * 7,
+            },
+          },
+        },
+      ],
+    },
+
+    devOptions: {
+      enabled: true, // важно: чтобы PWA работала и в dev
+    },
+  });
+
   return {
-    plugins: [react(), ...extraPlugins],
+    plugins: [react(), pwaPlugin, ...extraPlugins],
 
     resolve: {
       alias: {

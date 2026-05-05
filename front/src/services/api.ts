@@ -9,7 +9,9 @@ async function post(path: string, formData: FormData) {
     body: formData,
     // Заголовок Content-Type НЕ ставим — браузер сам проставит boundary для multipart
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status}`);
+  }
   return res.json();
 }
 
