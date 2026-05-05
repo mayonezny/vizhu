@@ -3,6 +3,7 @@ load_dotenv()
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from routers import describe, currency, ocr
+from routers import describe, currency, ocr, stt
 import logging
  
 
@@ -29,6 +30,7 @@ app = FastAPI(
 app.include_router(describe.router, prefix="/describe", tags=["describe"])
 app.include_router(currency.router, prefix="/currency", tags=["currency"])
 app.include_router(ocr.router, prefix="/ocr", tags=["ocr"])
+app.include_router(stt.router, prefix="/stt", tags=["stt"])
 
 
 @app.get("/health")
