@@ -28,7 +28,7 @@ app = FastAPI(
 
 app.include_router(describe.router, prefix="/describe", tags=["describe"])
 app.include_router(currency.router, prefix="/currency", tags=["currency"])
-# app.include_router(ocr.router, prefix="/ocr", tags=["ocr"])
+app.include_router(ocr.router, prefix="/ocr", tags=["ocr"])
 
 
 @app.get("/health")
