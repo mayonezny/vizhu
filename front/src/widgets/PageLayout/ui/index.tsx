@@ -32,10 +32,14 @@ export const PageLayout = () => {
   const { toggle } = useTheme();
 
   const renderHeader = () => {
-    if (handle?.headerVariant === 'back') {
-      return <TitleHeader title={handle.title} />;
+    switch (handle?.headerVariant) {
+      case 'back':
+        return <TitleHeader title={handle.title} />;
+      case 'logo':
+        return <LogoHeader />;
+      default:
+        return <LogoHeader />;
     }
-    return <LogoHeader />;
   };
 
   return (
