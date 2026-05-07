@@ -126,11 +126,6 @@ button {
   cursor: pointer;
   background: none;
   border: 0;
-  transition: filter 0.2s ease;
-}
-
-button:active {
-  filter: brightness(0.9);
 }
 
 a {
