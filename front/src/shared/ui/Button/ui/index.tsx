@@ -3,9 +3,7 @@ import './Button.scss';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode;
-  /** Надпись над основным текстом (читается screen reader-ом первой) */
   title?: string;
-  /** Пояснение под основным текстом */
   subtitle?: string;
   primary?: boolean;
   outline?: boolean;
