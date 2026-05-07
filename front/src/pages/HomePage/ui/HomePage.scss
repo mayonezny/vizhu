@@ -1,29 +1,28 @@
 .home-page {
   display: flex;
   flex-direction: column;
+  gap: var(--space-6);
   align-items: center;
   justify-content: center;
   min-height: 100dvh;
   padding: var(--pad-xl);
   text-align: center;
-  gap: var(--space-6);
 
   &__title {
+    margin: 0;
     font-size: var(--fs-4xl);
     font-weight: var(--fw-bold);
-    margin: 0;
     background: linear-gradient(135deg, var(--color-primary), var(--color-info));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   &__desc {
-    font-size: var(--fs-lg);
-    color: var(--color-text-muted);
     max-width: 520px;
     margin: 0;
+    font-size: var(--fs-lg);
     line-height: var(--lh-relaxed);
+    color: var(--color-text-muted);
   }
 
   &__links {
@@ -35,12 +34,12 @@
 
   &__link {
     padding: var(--pad-sm) var(--pad-md);
-    border-radius: var(--radius-sm);
     font-size: var(--fs-sm);
     font-weight: var(--fw-medium);
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
     color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     transition:
       background 0.15s,
       border-color 0.15s;
@@ -50,8 +49,8 @@
     }
 
     &--primary {
-      background: var(--color-primary);
       color: #fff;
+      background: var(--color-primary);
       border-color: transparent;
 
       &:hover {

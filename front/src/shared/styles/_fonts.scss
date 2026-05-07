@@ -1,31 +1,31 @@
 @font-face {
-  font-family: 'Onest';
-  src: url('/fonts/Onest-Regular.woff2') format('woff2');
+  font-family: Onest;
+  font-style: normal;
   font-weight: 400;
-  font-style: normal;
+  src: url('/fonts/Onest-Regular.woff2') format('woff2');
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Onest';
-  src: url('/fonts/Onest-Medium.woff2') format('woff2');
+  font-family: Onest;
+  font-style: normal;
   font-weight: 500;
-  font-style: normal;
+  src: url('/fonts/Onest-Medium.woff2') format('woff2');
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Onest';
-  src: url('/fonts/Onest-SemiBold.woff2') format('woff2');
+  font-family: Onest;
+  font-style: normal;
   font-weight: 600;
-  font-style: normal;
+  src: url('/fonts/Onest-SemiBold.woff2') format('woff2');
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Onest';
-  src: url('/fonts/Onest-Bold.woff2') format('woff2');
-  font-weight: 700;
+  font-family: Onest;
   font-style: normal;
+  font-weight: 700;
+  src: url('/fonts/Onest-Bold.woff2') format('woff2');
   font-display: swap;
 }
