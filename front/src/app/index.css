@@ -150,10 +150,6 @@ svg {
   box-shadow: 0 0 0 var(--focus-ring) var(--color-focus);
 }
 
-::selection {
-  background: color-mix(in oklab, var(--blue-700) 20%, transparent);
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;
