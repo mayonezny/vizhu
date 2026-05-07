@@ -103,7 +103,7 @@ export const OnboardingPage = () => {
         ))}
       </div>
 
-      <section
+      <div
         className={[
           'ob__content',
           animDir === 'next' && 'ob__content--exit-left',
@@ -111,13 +111,11 @@ export const OnboardingPage = () => {
         ]
           .filter(Boolean)
           .join(' ')}
-        aria-live="polite"
-        aria-atomic="true"
       >
         <p className="ob__tag">{slide.tag}</p>
         <h1 className="ob__title">{slide.title}</h1>
         <p className="ob__body">{slide.body}</p>
-      </section>
+      </div>
 
       <div className="ob__footer">
         <Button primary onClick={handleCta}>
