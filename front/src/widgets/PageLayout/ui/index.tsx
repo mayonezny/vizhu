@@ -2,8 +2,8 @@ import { House, History, Headset, User } from 'lucide-react';
 import { NavLink, Outlet, useMatches } from 'react-router';
 import type { NavLinkRenderProps } from 'react-router';
 
-import { BackHeader } from './BackHeader';
 import { LogoHeader } from './LogoHeader';
+import { TitleHeader } from './TitleHeader';
 import './page-layout.scss';
 
 type RouteHandle = { headerVariant?: 'logo' } | { headerVariant: 'back'; title: string };
@@ -27,7 +27,7 @@ export const PageLayout = () => {
 
   const renderHeader = () => {
     if (handle?.headerVariant === 'back') {
-      return <BackHeader title={handle.title} />;
+      return <TitleHeader title={handle.title} />;
     }
     return <LogoHeader />;
   };

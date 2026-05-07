@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router';
 import { useTheme } from '@/shared/lib/theme';
 import { RoundButton } from '@/shared/ui/RoundButton';
 
-interface BackHeaderProps {
+interface TitleHeaderProps {
   title: string;
 }
 
-export const BackHeader = ({ title }: BackHeaderProps) => {
+export const TitleHeader = ({ title }: TitleHeaderProps) => {
   const { toggle } = useTheme();
   const navigate = useNavigate();
 

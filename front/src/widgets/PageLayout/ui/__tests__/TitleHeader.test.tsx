@@ -15,12 +15,12 @@ vi.mock('@/shared/lib/theme', () => ({
   useTheme: () => ({ toggle: mockToggle }),
 }));
 
-const { BackHeader } = await import('../BackHeader');
+const { TitleHeader } = await import('../TitleHeader');
 
 const renderBackHeader = (title = 'Настройки') =>
   render(
     <MemoryRouter>
-      <BackHeader title={title} />
+      <TitleHeader title={title} />
     </MemoryRouter>,
   );
 
