@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -60,6 +61,18 @@ describe('PageLayout', () => {
     vi.mocked(useMatches).mockReturnValue([]);
     renderLayout();
     expect(screen.getByRole('img')).toBeInTheDocument();
+  });
+
+  it('рендерит кнопку смены темы', () => {
+    renderLayout();
+    expect(screen.getByRole('button', { name: 'Кнопка смены темы' })).toBeInTheDocument();
+  });
+
+  it('кнопка смены темы вызывает toggle', async () => {
+    const user = userEvent.setup();
+    renderLayout();
+    await user.click(screen.getByRole('button', { name: 'Кнопка смены темы' }));
+    expect(mockToggle).toHaveBeenCalledOnce();
   });
 
   it('показывает BackHeader когда handle.headerVariant = "back"', () => {

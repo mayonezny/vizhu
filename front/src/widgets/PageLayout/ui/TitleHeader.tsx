@@ -1,7 +1,6 @@
-import { ArrowBigLeft, Sun } from 'lucide-react';
+import { ArrowBigLeft } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
-import { useTheme } from '@/shared/lib/theme';
 import { RoundButton } from '@/shared/ui/RoundButton';
 
 interface TitleHeaderProps {
@@ -9,7 +8,6 @@ interface TitleHeaderProps {
 }
 
 export const TitleHeader = ({ title }: TitleHeaderProps) => {
-  const { toggle } = useTheme();
   const navigate = useNavigate();
 
   return (
@@ -20,7 +18,6 @@ export const TitleHeader = ({ title }: TitleHeaderProps) => {
         onClick={() => navigate(-1)}
       />
       <h1 className="page-layout__title">{title}</h1>
-      <RoundButton icon={<Sun size={24} />} aria-label="Сменить тему" onClick={toggle} />
     </>
   );
 };
