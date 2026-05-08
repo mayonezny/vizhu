@@ -46,7 +46,10 @@ export function useVoiceRecord(): UseVoiceRecordReturn {
       setAnalyserNode(analyser);
 
       chunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
+        ? 'audio/ogg;codecs=opus'
+        : 'audio/webm;codecs=opus';
+      const recorder = new MediaRecorder(stream, { mimeType });
       recorderRef.current = recorder;
 
       recorder.ondataavailable = (e) => {

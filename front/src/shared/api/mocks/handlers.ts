@@ -9,12 +9,12 @@ const MOCK_POSTS: Post[] = [
 ];
 
 export const handlers = [
-  http.post('*/stt', async () => {
+  http.post('*/ai/stt', async () => {
     await new Promise((r) => setTimeout(r, 800));
     return HttpResponse.json({ text: 'тестовый распознанный текст' });
   }),
 
-  http.post('*/classify', async () => {
+  http.post('*/ai/classify', async () => {
     await new Promise((r) => setTimeout(r, 300));
     return HttpResponse.json({ command: 1, raw: 'тестовый распознанный текст' });
   }),

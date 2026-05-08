@@ -32,7 +32,8 @@ export const api = {
 
   stt(audioBlob: Blob, mimeType: string): Promise<{ text: string }> {
     const fd = new FormData();
-    fd.append('audio', audioBlob, `recording.${mimeType.split('/')[1] ?? 'webm'}`);
+    const ext = (mimeType.split('/')[1] ?? 'webm').split(';')[0];
+    fd.append('audio', audioBlob, `recording.${ext}`);
     fd.append('mime_type', mimeType);
     return post('/ai/stt', fd) as Promise<{ text: string }>;
   },
