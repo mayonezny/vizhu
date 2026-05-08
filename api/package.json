@@ -17,26 +17,28 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "^11.0.1",
-    "@nestjs/core": "^11.0.1",
-    "@nestjs/platform-fastify": "^11.0.1",
     "@fastify/multipart": "^10.0.0",
+    "@nestjs/axios": "^4.0.1",
+    "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-fastify": "^11.0.20",
+    "@nestjs/platform-socket.io": "^11.0.1",
     "@nestjs/typeorm": "^11.0.1",
     "@nestjs/websockets": "^11.0.1",
-    "@nestjs/platform-socket.io": "^11.0.1",
-    "@nestjs/axios": "^4.0.1",
     "axios": "^1.6.0",
-    "typeorm": "^0.3.0",
-    "pg": "^8.11.0",
+    "bcrypt": "^5.1.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "ioredis": "^5.3.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.0",
-    "bcrypt": "^5.1.0",
+    "pg": "^8.11.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "typeorm": "^0.3.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -65,14 +67,24 @@
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },
+  "overrides": {
+    "fastify": "5.8.5",
+    "tar": "7.5.15"
+  },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
-    "collectCoverageFrom": ["**/*.(t|j)s"],
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
