@@ -4,6 +4,7 @@ import { AuthPage } from '@/pages/AuthPage';
 import { DemoPage } from '@/pages/DemoPage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { HomePage } from '@/pages/HomePage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { OnboardingLayout } from '@/widgets/OnboardingLayout';
 import { PageLayout } from '@/widgets/PageLayout';
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
         element: <OnboardingLayout />,
         children: [{ path: 'onboarding', element: <OnboardingPage /> }],
       },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ]);
