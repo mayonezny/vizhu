@@ -24,3 +24,31 @@ class CurrencyResponse(BaseModel):
 class OcrResponse(BaseModel):
     text: str
     model: str
+    
+class SttRequest(BaseModel):
+    audio: str
+    mime_type: str
+    lang: str = "ru-RU"
+
+
+class SttResponse(BaseModel):
+    text: str
+    model: str = "yandex-speechkit"
+
+
+class ChatRequest(BaseModel):
+    text: str
+
+
+class ChatResponse(BaseModel):
+    text: str
+    model: str
+
+
+class ClassifyRequest(BaseModel):
+    text: str
+
+
+class ClassifyResponse(BaseModel):
+    command: int   # 0 — не распознано, 1–5 — команда
+    raw: str       # ответ GigaChat для отладки

@@ -1,0 +1,114 @@
+@use 'shared/styles/_mixins' as m;
+
+.auth {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  height: 100dvh;
+  padding: var(--pad-4);
+  overflow: hidden;
+
+  &__logo-wrap {
+    display: flex;
+    justify-content: center;
+    padding: var(--pad-3) 0;
+    color: var(--color-primary);
+  }
+
+  &__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    text-align: center;
+  }
+
+  &__title {
+    @include m.text-32;
+
+    color: var(--color-text);
+  }
+
+  &__desc {
+    @include m.text-16;
+
+    color: var(--color-text-muted);
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__separator {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    color: var(--color-text-muted);
+
+    @include m.text-14;
+
+    &::before,
+    &::after {
+      flex: 1;
+      height: 1px;
+      content: '';
+      background: var(--color-border);
+    }
+  }
+
+  &__demo-hint {
+    @include m.text-14;
+
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  &__legal {
+    margin-top: auto;
+    text-align: center;
+
+    p {
+      @include m.text-12;
+
+      color: var(--color-text-muted);
+    }
+  }
+
+  &__link {
+    color: var(--color-primary);
+    text-underline-offset: 2px;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+  }
+}
+
+.auth__gosuslugi-logo {
+  width: auto;
+  height: 20px;
+}
+
+/* Демо-кнопка — фиксированные цвета, не реагирует на тему */
+.auth__actions .btn--demo {
+  color: #fff;
+  background: #0b0f14;
+  border-color: #fff;
+}
+
+.auth__actions .btn--demo:hover:not(:disabled) {
+  background: #1c2333;
+}
+
+.auth__actions .btn--demo:active:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.auth__actions .btn--demo:focus-visible {
+  box-shadow:
+    0 0 0 3px #0b0f14,
+    0 0 0 6px #fff;
+}

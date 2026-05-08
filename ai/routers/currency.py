@@ -20,7 +20,7 @@ async def recognize_currency(body: ImageRequest):
             "Ответь ТОЛЬКО номиналом и словом рублей, например: 1000 рублей. "
             "Если купюры нет — ответь: не определено."
         )
-        text = await gigachat.vision(body.image, body.mime_type, prompt)
+        text, _ = await gigachat.vision(body.image, body.mime_type, prompt)
         return CurrencyResponse(amount=text.strip(), confidence=0.95)
     except Exception as e:
         logger.error(f"currency error: {e}")

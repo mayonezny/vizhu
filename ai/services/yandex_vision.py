@@ -17,7 +17,7 @@ class YandexVisionService:
         self.folder_id = os.environ["YANDEX_FOLDER_ID"]
         self.api_key = os.environ["YANDEX_API_KEY"]
 
-    async def ocr(self, image_base64: str) -> str:
+    async def ocr(self, image_base64: str) -> tuple[str, str]:
         payload = {
             "mimeType": "JPEG",
             "languageCodes": ["ru", "en"],
@@ -39,9 +39,10 @@ class YandexVisionService:
             response.raise_for_status()
 
         data = response.json()
+        result = data.get("result", {})
 
         # Собираем весь распознанный текст
-        blocks = data.get("result", {}).get("textAnnotation", {}).get("blocks", [])
+        blocks = result.get("textAnnotation", {}).get("blocks", [])
         lines = []
         for block in blocks:
             for line in block.get("lines", []):
@@ -50,4 +51,7 @@ class YandexVisionService:
                 )
                 lines.append(line_text)
 
-        return "\n".join(lines)
+        model_version = result.get("modelVersion", "")
+        model = f"yandex-vision-page-{model_version}" if model_version else "yandex-vision-page"
+
+        return "\n".join(lines), model

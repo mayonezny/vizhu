@@ -1,9 +1,15 @@
-import {
-  Controller, Post, UploadedFile,
-  UseInterceptors, Query, ParseEnumPipe,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { AiService, DescribeMode } from './ai.service';
+import { Body, Controller, Post, Req, Query } from '@nestjs/common';
+import { AiService, type DescribeMode } from './ai.service';
+
+// Локальные интерфейсы — избегаем emitDecoratorMetadata-конфликта с FastifyRequest
+interface UploadedFile {
+  toBuffer(): Promise<Buffer>;
+  mimetype: string;
+}
+
+interface MultipartRequest {
+  file(): Promise<UploadedFile>;
+}
 
 @Controller('ai')
 export class AiController {
@@ -11,25 +17,55 @@ export class AiController {
 
   // POST /api/ai/describe?mode=short|detailed
   @Post('describe')
-  @UseInterceptors(FileInterceptor('image'))
-  describe(
-    @UploadedFile() file: Express.Multer.File,
+  async describe(
+    @Req() req: object,
     @Query('mode') mode: DescribeMode = 'short',
-  ) {
-    return this.aiService.describeScene(file.buffer, file.mimetype, mode);
+  ): Promise<unknown> {
+    const { buffer, mimetype } = await this.extractFile(req);
+    return this.aiService.describeScene(buffer, mimetype, mode);
   }
 
   // POST /api/ai/currency
   @Post('currency')
-  @UseInterceptors(FileInterceptor('image'))
-  currency(@UploadedFile() file: Express.Multer.File) {
-    return this.aiService.recognizeCurrency(file.buffer, file.mimetype);
+  async currency(@Req() req: object): Promise<unknown> {
+    const { buffer, mimetype } = await this.extractFile(req);
+    return this.aiService.recognizeCurrency(buffer, mimetype);
   }
 
   // POST /api/ai/ocr
   @Post('ocr')
-  @UseInterceptors(FileInterceptor('image'))
-  ocr(@UploadedFile() file: Express.Multer.File) {
-    return this.aiService.extractText(file.buffer, file.mimetype);
+  async ocr(@Req() req: object): Promise<unknown> {
+    const { buffer, mimetype } = await this.extractFile(req);
+    return this.aiService.extractText(buffer, mimetype);
+  }
+
+  // POST /api/ai/chat  { text: string }
+  @Post('chat')
+  async chat(@Body('text') text: string): Promise<unknown> {
+    return this.aiService.customChat(text);
+  }
+
+  // POST /api/ai/classify  { text: string } — команда → номер действия + уверенность
+  @Post('classify')
+  async classify(@Body('text') text: string): Promise<unknown> {
+    return this.aiService.classifyVoiceCommand(text);
+  }
+
+  // POST /api/ai/stt?lang=ru-RU
+  @Post('stt')
+  async stt(
+    @Req() req: object,
+    @Query('lang') lang = 'ru-RU',
+  ): Promise<unknown> {
+    const { buffer, mimetype } = await this.extractFile(req);
+    return this.aiService.transcribeSpeech(buffer, mimetype, lang);
+  }
+
+  private async extractFile(
+    req: object,
+  ): Promise<{ buffer: Buffer; mimetype: string }> {
+    const file = await (req as MultipartRequest).file();
+    const buffer = await file.toBuffer();
+    return { buffer, mimetype: file.mimetype };
   }
 }

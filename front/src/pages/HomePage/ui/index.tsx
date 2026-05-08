@@ -1,41 +1,30 @@
-import { Link } from 'react-router-dom';
+import { QuickActionButton } from './QuickActionButton';
+import { QUICK_ACTIONS } from './quickActions';
+import { VoiceButton } from './VoiceButton';
 
 import './HomePage.scss';
 
 export const HomePage = () => (
   <div className="home-page">
-    <h1 className="home-page__title">React Frontend Template</h1>
-    <p className="home-page__desc">
-      A production-ready starter with TanStack Query, Zustand, and Feature Sliced Design.
-    </p>
-    <div className="home-page__links">
-      <Link to="/demo" className="home-page__link home-page__link--primary">
-        Open Demo →
-      </Link>
-      <a
-        href="https://feature-sliced.design/"
-        target="_blank"
-        rel="noreferrer"
-        className="home-page__link"
-      >
-        FSD Docs
-      </a>
-      <a
-        href="https://tanstack.com/query/latest"
-        target="_blank"
-        rel="noreferrer"
-        className="home-page__link"
-      >
-        TanStack Query
-      </a>
-      <a
-        href="https://zustand.docs.pmnd.rs/"
-        target="_blank"
-        rel="noreferrer"
-        className="home-page__link"
-      >
-        Zustand
-      </a>
-    </div>
+    <VoiceButton />
+
+    <section aria-labelledby="quick-actions-heading" className="home-page__quick-actions">
+      <h2 id="quick-actions-heading" className="home-page__section-title">
+        Быстрые действия
+      </h2>
+      <ul className="home-page__grid" role="list">
+        {QUICK_ACTIONS.map(({ id, label, to, prompt, Icon, ariaLabel }) => (
+          <li key={id}>
+            <QuickActionButton
+              label={label}
+              to={to}
+              prompt={prompt}
+              Icon={Icon}
+              ariaLabel={ariaLabel}
+            />
+          </li>
+        ))}
+      </ul>
+    </section>
   </div>
 );

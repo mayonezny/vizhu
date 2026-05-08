@@ -15,8 +15,8 @@ async def extract_text(body: ImageRequest):
     Использует Yandex Vision OCR.
     """
     try:
-        text = await yandex.ocr(body.image)
-        return OcrResponse(text=text, model="yandex-vision")
+        text, model = await yandex.ocr(body.image)
+        return OcrResponse(text=text, model=model)
     except Exception as e:
         logger.error(f"ocr error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
