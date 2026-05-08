@@ -1,0 +1,25 @@
+.onboarding-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding: 0 var(--pad-4);
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: var(--pad-3) 0;
+    color: var(--color-primary);
+  }
+
+  &__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+
+    &:focus {
+      outline: none;
+    }
+  }
+}

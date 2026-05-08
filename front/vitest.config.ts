@@ -12,6 +12,14 @@ export default defineConfig({
     },
   },
 
+  css: {
+    preprocessorOptions: {
+      scss: {
+        loadPaths: [resolve(__dirname, 'src')],
+      },
+    },
+  },
+
   test: {
     // jsdom эмулирует браузерное окружение для компонентных тестов
     environment: 'jsdom',
@@ -22,7 +30,6 @@ export default defineConfig({
     // Глобалы Vitest (describe, it, expect и т.д.) доступны без импортов
     globals: true,
 
-    // Обрабатываем CSS-модули и SCSS (предотвращает ошибки импорта)
     css: true,
 
     // Покрытие кода
