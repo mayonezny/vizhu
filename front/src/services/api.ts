@@ -34,12 +34,12 @@ export const api = {
     const fd = new FormData();
     fd.append('audio', audioBlob, `recording.${mimeType.split('/')[1] ?? 'webm'}`);
     fd.append('mime_type', mimeType);
-    return post('/stt', fd) as Promise<{ text: string }>;
+    return post('/ai/stt', fd) as Promise<{ text: string }>;
   },
 
   classify(text: string): Promise<{ command: number; raw: string }> {
     const fd = new FormData();
     fd.append('text', text);
-    return post('/classify', fd) as Promise<{ command: number; raw: string }>;
+    return post('/ai/classify', fd) as Promise<{ command: number; raw: string }>;
   },
 };
