@@ -10,6 +10,12 @@ import { VoiceButton } from './VoiceButton';
 
 import './HomePage.scss';
 
+const COMMAND_ROUTES: Record<number, string> = {
+  1: '/dialog',
+};
+
+const getRouteForCommand = (command: number): string => COMMAND_ROUTES[command] ?? '/dialog';
+
 export const HomePage = () => {
   const navigate = useNavigate();
   const [overlayOpen, setOverlayOpen] = useState(false);
@@ -20,9 +26,9 @@ export const HomePage = () => {
       setIsSending(true);
       try {
         const { text } = await api.stt(blob, mimeType);
-        await api.questionMock(text);
+        const { command } = await api.classify(text);
         setOverlayOpen(false);
-        void navigate('/dialog', { state: { transcript: text } });
+        void navigate(getRouteForCommand(command), { state: { transcript: text, command } });
       } finally {
         setIsSending(false);
       }

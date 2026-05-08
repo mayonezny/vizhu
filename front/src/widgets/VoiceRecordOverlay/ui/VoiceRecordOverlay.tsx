@@ -71,9 +71,7 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
 
       <div className="voice-overlay__panel" ref={panelRef}>
         <p className="voice-overlay__status" aria-live="polite" aria-atomic="true">
-          {isActive && 'Говорите...'}
-          {isStopped && 'Готово — нажмите Отправить'}
-          {isSending && 'Отправка...'}
+          {isSending ? 'Отправка...' : isStopped ? 'Готово — нажмите Отправить' : 'Говорите...'}
         </p>
 
         <Waveform analyserNode={analyserNode} />

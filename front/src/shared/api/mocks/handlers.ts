@@ -9,12 +9,15 @@ const MOCK_POSTS: Post[] = [
 ];
 
 export const handlers = [
-  http.post('*/api/stt', async () => {
+  http.post('*/stt', async () => {
     await new Promise((r) => setTimeout(r, 800));
     return HttpResponse.json({ text: 'тестовый распознанный текст' });
   }),
 
-  http.post('*/api/question', async () => HttpResponse.json({ intent: 'dialog' })),
+  http.post('*/classify', async () => {
+    await new Promise((r) => setTimeout(r, 300));
+    return HttpResponse.json({ command: 1, raw: 'тестовый распознанный текст' });
+  }),
 
   // GET /posts
   http.get('*/posts', () => HttpResponse.json(MOCK_POSTS)),

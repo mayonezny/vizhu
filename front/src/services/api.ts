@@ -1,4 +1,4 @@
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_URL as string;
 
 async function post(path: string, formData: FormData) {
   const res = await fetch(`${BASE}${path}`, {
@@ -37,7 +37,9 @@ export const api = {
     return post('/stt', fd) as Promise<{ text: string }>;
   },
 
-  questionMock(_text: string): Promise<{ intent: string }> {
-    return Promise.resolve({ intent: 'dialog' });
+  classify(text: string): Promise<{ command: number; raw: string }> {
+    const fd = new FormData();
+    fd.append('text', text);
+    return post('/classify', fd) as Promise<{ command: number; raw: string }>;
   },
 };

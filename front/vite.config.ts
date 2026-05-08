@@ -61,6 +61,9 @@ export default defineConfig(async ({ mode }) => {
       port: 3000,
       strictPort: false,
       open: true,
+      proxy: {
+        '/api': { target: 'https://vizhu.su', changeOrigin: true },
+      },
     },
 
     // ─── Сборка ───────────────────────────────────────────────────────────
@@ -95,6 +98,9 @@ export default defineConfig(async ({ mode }) => {
     // ─── Preview (vite preview) ───────────────────────────────────────────
     preview: {
       port: 4173,
+      proxy: {
+        '/api': { target: 'https://vizhu.su', changeOrigin: true },
+      },
     },
   };
 });
