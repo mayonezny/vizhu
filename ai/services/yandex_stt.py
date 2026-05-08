@@ -1,9 +1,12 @@
-import httpx
-import os
-import base64
-import logging
-import json
 import asyncio
+import base64
+import json
+import logging
+import os
+import subprocess
+import tempfile
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +36,34 @@ class YandexSttService:
             "x-folder-id": self.folder_id,
         }
 
+    @staticmethod
+    def _webm_to_ogg(audio_bytes: bytes) -> bytes:
+        with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as src:
+            src.write(audio_bytes)
+            src_path = src.name
+        dst_path = src_path.replace(".webm", ".ogg")
+        try:
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", src_path, "-c:a", "libopus", dst_path],
+                check=True, capture_output=True,
+            )
+            with open(dst_path, "rb") as f:
+                return f.read()
+        finally:
+            os.unlink(src_path)
+            if os.path.exists(dst_path):
+                os.unlink(dst_path)
+
     async def recognize(self, audio_base64: str, mime_type: str, lang: str = "ru-RU") -> str:
         base_mime = mime_type.split(";")[0].strip()
-        logger.info(mime_type, base_mime)
+
+        if base_mime in ("audio/webm", "video/webm"):
+            logger.info("Конвертируем WebM → OGG")
+            audio_bytes = base64.b64decode(audio_base64)
+            audio_bytes = self._webm_to_ogg(audio_bytes)
+            audio_base64 = base64.b64encode(audio_bytes).decode()
+            base_mime = "audio/ogg"
+
         audio_format = MIME_TO_FORMAT.get(base_mime, "OGG_OPUS")
 
         payload = {
