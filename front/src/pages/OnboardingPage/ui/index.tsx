@@ -9,6 +9,7 @@ import { slides } from './slides';
 import './OnboardingPage.scss';
 
 const STORAGE_KEY = 'vizhu_onboarding_seen';
+const DEMO_KEY = 'vizhu_demo_mode';
 
 export const OnboardingPage = () => {
   const navigate = useNavigate();
@@ -17,7 +18,9 @@ export const OnboardingPage = () => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY)) {
+    if (!localStorage.getItem(DEMO_KEY)) {
+      void navigate('/auth', { replace: true });
+    } else if (localStorage.getItem(STORAGE_KEY)) {
       void navigate('/', { replace: true });
     }
   }, [navigate]);
