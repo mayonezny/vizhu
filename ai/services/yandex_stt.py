@@ -8,12 +8,12 @@ import asyncio
 logger = logging.getLogger(__name__)
 
 MIME_TO_FORMAT = {
-    "audio/ogg":   "OGG_OPUS",
-    "audio/webm":  "WEBM_OPUS",
-    "audio/wav":   "LINEAR16_PCM",
-    "audio/x-wav": "LINEAR16_PCM",
-    "audio/mp3":   "MP3",
-    "audio/mpeg":  "MP3",
+    "audio/ogg":        "OGG_OPUS",
+    "audio/webm":       "MP4",      # webm с opus кодеком — Яндекс принимает как MP4
+    "audio/wav":        "LINEAR16_PCM",
+    "audio/x-wav":      "LINEAR16_PCM",
+    "audio/mp3":        "MP3",
+    "audio/mpeg":       "MP3",
 }
 
 
