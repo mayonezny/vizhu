@@ -15,10 +15,21 @@ class GigaChatService:
     def __init__(self):
         self.credentials = os.environ["GIGACHAT_CREDENTIALS"]
 
+    def _client(self) -> GigaChat:
+        return GigaChat(credentials=self.credentials, verify_ssl_certs=False)
+
+    async def chat(self, text: str) -> tuple[str, str]:
+        with self._client() as giga:
+            response = giga.chat(Chat(
+                messages=[Messages(role=MessagesRole.USER, content=text)],
+                model="GigaChat-2-Max",
+            ))
+            return response.choices[0].message.content, response.model
+
     async def vision(self, image_base64: str, mime_type: str, prompt: str) -> tuple[str, str]:
         image_bytes = base64.b64decode(image_base64)
 
-        with GigaChat(credentials=self.credentials, verify_ssl_certs=False) as giga:
+        with self._client() as giga:
             # Сначала загружаем файл — SDK возвращает id
             uploaded = giga.upload_file(
                 ("image.jpg", BytesIO(image_bytes), mime_type)

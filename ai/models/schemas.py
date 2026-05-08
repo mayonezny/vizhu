@@ -34,3 +34,12 @@ class SttRequest(BaseModel):
 class SttResponse(BaseModel):
     text: str
     model: str = "yandex-speechkit"
+
+
+class ChatRequest(BaseModel):
+    text: str
+
+
+class ChatResponse(BaseModel):
+    text: str
+    model: str

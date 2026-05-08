@@ -1,4 +1,4 @@
-import { Controller, Post, Req, Query } from '@nestjs/common';
+import { Body, Controller, Post, Req, Query } from '@nestjs/common';
 import { AiService, type DescribeMode } from './ai.service';
 
 // Локальные интерфейсы — избегаем emitDecoratorMetadata-конфликта с FastifyRequest
@@ -37,6 +37,12 @@ export class AiController {
   async ocr(@Req() req: object): Promise<unknown> {
     const { buffer, mimetype } = await this.extractFile(req);
     return this.aiService.extractText(buffer, mimetype);
+  }
+
+  // POST /api/ai/chat  { text: string }
+  @Post('chat')
+  async chat(@Body('text') text: string): Promise<unknown> {
+    return this.aiService.customChat(text);
   }
 
   // POST /api/ai/stt?lang=ru-RU

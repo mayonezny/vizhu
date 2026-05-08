@@ -46,6 +46,10 @@ export class AiService {
     });
   }
 
+  async customChat(text: string): Promise<unknown> {
+    return this.callAi('/chat', { text });
+  }
+
   async transcribeSpeech(
     audioBuffer: Buffer,
     mimeType: string,
