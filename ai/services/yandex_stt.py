@@ -66,6 +66,7 @@ class YandexSttService:
                 json=payload,
                 timeout=15.0,
             )
+            logger.info(f"Yandex STT status={response.status_code} body={response.text[:500]}")
             response.raise_for_status()
             operation_id = response.json().get("id")
             if not operation_id:
