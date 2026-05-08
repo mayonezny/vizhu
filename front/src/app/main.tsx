@@ -14,7 +14,6 @@ if (!root) {
   throw new Error('Элемент #root не найден. Проверьте index.html.');
 }
 
-// Удалить статичный прелоадер после монтирования React
 const removePreloader = () => {
   const preloader = document.getElementById('app-preloader');
   if (preloader) {
@@ -23,12 +22,21 @@ const removePreloader = () => {
   }
 };
 
-createRoot(root).render(
-  <StrictMode>
-    <AppProviders>
-      <RouterProvider router={router} />
-    </AppProviders>
-  </StrictMode>,
-);
+const startApp = () => {
+  createRoot(root).render(
+    <StrictMode>
+      <AppProviders>
+        <RouterProvider router={router} />
+      </AppProviders>
+    </StrictMode>,
+  );
+  removePreloader();
+};
 
-removePreloader();
+if (import.meta.env.DEV) {
+  await import('@/shared/api/mocks/browser').then(({ worker }) => {
+    void worker.start({ onUnhandledRequest: 'bypass' }).then(startApp);
+  });
+} else {
+  startApp();
+}

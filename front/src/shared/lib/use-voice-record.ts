@@ -1,0 +1,88 @@
+import { useCallback, useRef, useState } from 'react';
+
+export type VoiceRecordStatus = 'idle' | 'requesting' | 'recording' | 'stopped';
+
+export type UseVoiceRecordReturn = {
+  status: VoiceRecordStatus;
+  audioBlob: Blob | null;
+  analyserNode: AnalyserNode | null;
+  start: () => Promise<void>;
+  stop: () => void;
+  cancel: () => void;
+};
+
+export function useVoiceRecord(): UseVoiceRecordReturn {
+  const [status, setStatus] = useState<VoiceRecordStatus>('idle');
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null);
+
+  const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const teardown = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    audioCtxRef.current?.close().catch(() => {});
+    streamRef.current = null;
+    recorderRef.current = null;
+    audioCtxRef.current = null;
+    setAnalyserNode(null);
+  }, []);
+
+  const start = useCallback(async () => {
+    setStatus('requesting');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 64;
+      source.connect(analyser);
+      setAnalyserNode(analyser);
+
+      chunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      recorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+        setAudioBlob(blob);
+        setStatus('stopped');
+      };
+
+      recorder.start();
+      setStatus('recording');
+    } catch {
+      setStatus('idle');
+    }
+  }, []);
+
+  const stop = useCallback(() => {
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      recorderRef.current.stop();
+    }
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
+    setAnalyserNode(null);
+  }, []);
+
+  const cancel = useCallback(() => {
+    teardown();
+    setAudioBlob(null);
+    setStatus('idle');
+  }, [teardown]);
+
+  return { status, audioBlob, analyserNode, start, stop, cancel };
+}

@@ -1,13 +1,9 @@
-// Все запросы к бэкенду через один объект
-// BASE_URL = '' означает тот же домен (nginx проксирует /api/)
-
 const BASE = '/api';
 
 async function post(path: string, formData: FormData) {
   const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
     body: formData,
-    // Заголовок Content-Type НЕ ставим — браузер сам проставит boundary для multipart
   });
   if (!res.ok) {
     throw new Error(`API error: ${res.status}`);
@@ -16,24 +12,32 @@ async function post(path: string, formData: FormData) {
 }
 
 export const api = {
-  // ФТ-1: описание сцены
   describe(imageFile: File, mode: 'short' | 'detailed' = 'short') {
     const fd = new FormData();
     fd.append('image', imageFile);
     return post(`/ai/describe?mode=${mode}`, fd);
   },
 
-  // ФТ-3: купюры
   currency(imageFile: File) {
     const fd = new FormData();
     fd.append('image', imageFile);
     return post('/ai/currency', fd);
   },
 
-  // ФТ-2: OCR
   ocr(imageFile: File) {
     const fd = new FormData();
     fd.append('image', imageFile);
     return post('/ai/ocr', fd);
+  },
+
+  stt(audioBlob: Blob, mimeType: string): Promise<{ text: string }> {
+    const fd = new FormData();
+    fd.append('audio', audioBlob, `recording.${mimeType.split('/')[1] ?? 'webm'}`);
+    fd.append('mime_type', mimeType);
+    return post('/stt', fd) as Promise<{ text: string }>;
+  },
+
+  questionMock(_text: string): Promise<{ intent: string }> {
+    return Promise.resolve({ intent: 'dialog' });
   },
 };
