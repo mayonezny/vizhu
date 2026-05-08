@@ -50,6 +50,10 @@ export class AiService {
     return this.callAi('/chat', { text });
   }
 
+  async classifyVoiceCommand(text: string): Promise<unknown> {
+    return this.callAi('/classify', { text });
+  }
+
   async transcribeSpeech(
     audioBuffer: Buffer,
     mimeType: string,

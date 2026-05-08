@@ -45,6 +45,12 @@ export class AiController {
     return this.aiService.customChat(text);
   }
 
+  // POST /api/ai/classify  { text: string } — команда → номер действия + уверенность
+  @Post('classify')
+  async classify(@Body('text') text: string): Promise<unknown> {
+    return this.aiService.classifyVoiceCommand(text);
+  }
+
   // POST /api/ai/stt?lang=ru-RU
   @Post('stt')
   async stt(

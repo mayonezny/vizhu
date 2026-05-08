@@ -43,3 +43,12 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     text: str
     model: str
+
+
+class ClassifyRequest(BaseModel):
+    text: str
+
+
+class ClassifyResponse(BaseModel):
+    command: int   # 0 — не распознано, 1–5 — команда
+    raw: str       # ответ GigaChat для отладки
