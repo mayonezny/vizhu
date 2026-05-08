@@ -13,9 +13,15 @@ export const HomePage = () => (
         Быстрые действия
       </h2>
       <ul className="home-page__grid" role="list">
-        {QUICK_ACTIONS.map(({ id, label, prompt, Icon, ariaLabel }) => (
+        {QUICK_ACTIONS.map(({ id, label, to, prompt, Icon, ariaLabel }) => (
           <li key={id}>
-            <QuickActionButton label={label} prompt={prompt} Icon={Icon} ariaLabel={ariaLabel} />
+            <QuickActionButton
+              label={label}
+              to={to}
+              prompt={prompt}
+              Icon={Icon}
+              ariaLabel={ariaLabel}
+            />
           </li>
         ))}
       </ul>

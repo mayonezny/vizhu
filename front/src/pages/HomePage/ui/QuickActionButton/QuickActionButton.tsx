@@ -5,15 +5,22 @@ import './QuickActionButton.scss';
 
 type QuickActionButtonProps = {
   label: string;
-  prompt: string;
+  to: string;
+  prompt?: string;
   Icon?: ComponentType;
   ariaLabel?: string;
 };
 
-export const QuickActionButton = ({ label, prompt, Icon, ariaLabel }: QuickActionButtonProps) => (
+export const QuickActionButton = ({
+  label,
+  to,
+  prompt,
+  Icon,
+  ariaLabel,
+}: QuickActionButtonProps) => (
   <Link
-    to="/dialog"
-    state={{ prompt }}
+    to={to}
+    state={prompt ? { prompt } : undefined}
     className="quick-action-btn"
     aria-label={ariaLabel ?? label}
   >

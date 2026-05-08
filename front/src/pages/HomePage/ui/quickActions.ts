@@ -5,7 +5,8 @@ import { IconBanknote, IconText, IconVolunteer, IconWhatAround } from './quickAc
 export type QuickAction = {
   id: string;
   label: string;
-  prompt: string;
+  to: string;
+  prompt?: string;
   Icon: ComponentType;
   ariaLabel: string;
 };
@@ -14,6 +15,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'what-around',
     label: 'Что вокруг',
+    to: '/dialog',
     prompt: 'Опиши, что находится вокруг меня',
     Icon: IconWhatAround,
     ariaLabel: 'Что вокруг — описать окружение',
@@ -21,6 +23,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'text',
     label: 'Текст',
+    to: '/dialog',
     prompt: 'Прочитай текст перед камерой',
     Icon: IconText,
     ariaLabel: 'Текст — прочитать текст перед камерой',
@@ -28,6 +31,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'banknote',
     label: 'Купюры',
+    to: '/dialog',
     prompt: 'Определи номинал купюры перед камерой',
     Icon: IconBanknote,
     ariaLabel: 'Купюры — определить номинал',
@@ -35,7 +39,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'volunteer',
     label: 'Волонтёр',
-    prompt: 'Соедини меня с волонтёром',
+    to: '/volunteer',
     Icon: IconVolunteer,
     ariaLabel: 'Волонтёр — связаться с живым помощником',
   },
