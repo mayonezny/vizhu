@@ -46,6 +46,18 @@ export class AiService {
     });
   }
 
+  async transcribeSpeech(
+    audioBuffer: Buffer,
+    mimeType: string,
+    lang = 'ru-RU',
+  ): Promise<unknown> {
+    return this.callAi('/stt', {
+      audio: audioBuffer.toString('base64'),
+      mime_type: mimeType,
+      lang,
+    });
+  }
+
   private async callAi(path: string, body: object): Promise<unknown> {
     try {
       const response = await firstValueFrom(

@@ -39,6 +39,16 @@ export class AiController {
     return this.aiService.extractText(buffer, mimetype);
   }
 
+  // POST /api/ai/stt?lang=ru-RU
+  @Post('stt')
+  async stt(
+    @Req() req: object,
+    @Query('lang') lang = 'ru-RU',
+  ): Promise<unknown> {
+    const { buffer, mimetype } = await this.extractFile(req);
+    return this.aiService.transcribeSpeech(buffer, mimetype, lang);
+  }
+
   private async extractFile(
     req: object,
   ): Promise<{ buffer: Buffer; mimetype: string }> {
