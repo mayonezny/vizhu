@@ -34,7 +34,8 @@ class YandexSttService:
         }
 
     async def recognize(self, audio_base64: str, mime_type: str, lang: str = "ru-RU") -> str:
-        audio_format = MIME_TO_FORMAT.get(mime_type, "OGG_OPUS")
+        base_mime = mime_type.split(";")[0].strip()
+        audio_format = MIME_TO_FORMAT.get(base_mime, "OGG_OPUS")
 
         payload = {
             "content": audio_base64,
