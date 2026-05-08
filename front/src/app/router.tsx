@@ -2,6 +2,7 @@ import { createBrowserRouter, redirect } from 'react-router';
 
 import { AuthPage } from '@/pages/AuthPage';
 import { DemoPage } from '@/pages/DemoPage';
+import { DialogPage } from '@/pages/DialogPage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
         element: <OnboardingLayout />,
         children: [{ path: 'onboarding', element: <OnboardingPage /> }],
       },
+      { path: 'dialog', element: <DialogPage />, loader: requireAuth },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

@@ -2,9 +2,6 @@ import { http, HttpResponse } from 'msw';
 
 import type { Post } from '@/entities/post';
 
-// Общие MSW-хэндлеры — используются и в браузере (dev), и в Node (тесты).
-// Описывайте здесь форму реального API для точного покрытия тестами.
-
 const MOCK_POSTS: Post[] = [
   { id: 1, userId: 1, title: 'Mock Post One', body: 'Body of mock post one.' },
   { id: 2, userId: 1, title: 'Mock Post Two', body: 'Body of mock post two.' },
@@ -12,6 +9,16 @@ const MOCK_POSTS: Post[] = [
 ];
 
 export const handlers = [
+  http.post('*/stt', async () => {
+    await new Promise((r) => setTimeout(r, 800));
+    return HttpResponse.json({ text: 'тестовый распознанный текст' });
+  }),
+
+  http.post('*/classify', async () => {
+    await new Promise((r) => setTimeout(r, 300));
+    return HttpResponse.json({ command: 1, raw: 'тестовый распознанный текст' });
+  }),
+
   // GET /posts
   http.get('*/posts', () => HttpResponse.json(MOCK_POSTS)),
 
