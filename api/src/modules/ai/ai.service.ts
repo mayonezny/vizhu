@@ -46,8 +46,8 @@ export class AiService {
     });
   }
 
-  async customChat(text: string): Promise<unknown> {
-    return this.callAi('/chat', { text });
+  async customChat(text: string, context?: string): Promise<unknown> {
+    return this.callAi('/chat', { text, context });
   }
 
   async classifyVoiceCommand(text: string): Promise<unknown> {

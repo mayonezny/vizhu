@@ -38,6 +38,7 @@ class SttResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     text: str
+    context: str | None = None  # описание фото для контекстного диалога
 
 
 class ChatResponse(BaseModel):

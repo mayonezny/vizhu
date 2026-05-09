@@ -19,6 +19,35 @@ export const handlers = [
     return HttpResponse.json({ command: 1, raw: 'тестовый распознанный текст' });
   }),
 
+  http.post('*/ai/describe', async () => {
+    await new Promise((r) => setTimeout(r, 1200));
+    return HttpResponse.json({
+      text: 'На фото видна комната с деревянными полками. На полках стоят книги и различные предметы декора.',
+      model: 'GigaChat',
+    });
+  }),
+
+  http.post('*/ai/ocr', async () => {
+    await new Promise((r) => setTimeout(r, 900));
+    return HttpResponse.json({
+      text: 'Образец текста, распознанный системой OCR. Строка вторая.',
+      model: 'YandexVision',
+    });
+  }),
+
+  http.post('*/ai/currency', async () => {
+    await new Promise((r) => setTimeout(r, 700));
+    return HttpResponse.json({ amount: '1000 рублей', confidence: 0.97 });
+  }),
+
+  http.post('*/ai/chat', async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    return HttpResponse.json({
+      text: 'Это тестовый ответ нейропомощника на ваш вопрос.',
+      model: 'GigaChat',
+    });
+  }),
+
   http.get('*/posts', () => HttpResponse.json(MOCK_POSTS)),
 
   http.get('*/posts/:id', ({ params }) => {

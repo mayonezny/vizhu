@@ -11,7 +11,12 @@ gigachat = GigaChatService()
 @router.post("", response_model=ChatResponse)
 async def chat(body: ChatRequest):
     try:
-        text, model = await gigachat.chat(body.text)
+        prompt = (
+            f"Контекст (описание фотографии): {body.context}\n\nВопрос пользователя: {body.text}"
+            if body.context
+            else body.text
+        )
+        text, model = await gigachat.chat(prompt)
         return ChatResponse(text=text, model=model)
     except Exception as e:
         logger.error(f"chat error: {e}")
