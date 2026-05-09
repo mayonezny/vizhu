@@ -19,6 +19,7 @@ jobs:
       api: ${{ steps.filter.outputs.api }}
       front: ${{ steps.filter.outputs.front }}
       ai: ${{ steps.filter.outputs.ai }}
+      infra: ${{ steps.filter.outputs.infra }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -31,6 +32,8 @@ jobs:
               - 'front/**'
             ai:
               - 'ai/**'
+            infra:
+              - 'infra/**'
 
   test-api:
     name: Test API (NestJS)
@@ -226,7 +229,7 @@ jobs:
       always() &&
       github.ref == 'refs/heads/main' &&
       github.event_name == 'push' &&
-      (needs.build-api.result == 'success' || needs.build-front.result == 'success' || needs.build-ai.result == 'success')
+      (needs.build-api.result == 'success' || needs.build-front.result == 'success' || needs.build-ai.result == 'success' || needs.detect-changes.outputs.infra == 'true')
     environment: production
     steps:
       - uses: appleboy/ssh-action@v1
@@ -235,13 +238,15 @@ jobs:
           FRONT_CHANGED: ${{ needs.detect-changes.outputs.front }}
           AI_CHANGED: ${{ needs.detect-changes.outputs.ai }}
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: ${{ secrets.SERVER_API_ADDR }}
+          username: ${{ secrets.SERVER_HOST_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_IDENTITY_FILE }}
           envs: API_CHANGED,FRONT_CHANGED,AI_CHANGED
           script: |
             set -e
-            cd /opt/vizhu/infra
+            cd ~/vizhu
+            git pull origin main
+            cd infra
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             if [ "$API_CHANGED" = "true" ]; then
