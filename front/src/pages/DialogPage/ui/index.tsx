@@ -81,8 +81,15 @@ export const DialogPage = () => {
     setCameraErr(null);
 
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-      .then((stream) => {
+      .getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      })
+      .then(async (stream) => {
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
@@ -90,6 +97,37 @@ export const DialogPage = () => {
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+        }
+
+        // Включаем непрерывный автофокус, если камера поддерживает
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          type ExtConstraints = MediaTrackConstraintSet & {
+            focusMode?: string;
+            whiteBalanceMode?: string;
+            exposureMode?: string;
+          };
+          type ExtCapabilities = MediaTrackCapabilities & {
+            focusMode?: string[];
+            whiteBalanceMode?: string[];
+            exposureMode?: string[];
+          };
+          const caps = track.getCapabilities() as ExtCapabilities;
+          const advanced: ExtConstraints[] = [];
+          if (caps.focusMode?.includes('continuous')) {
+            advanced.push({ focusMode: 'continuous' });
+          }
+          if (caps.whiteBalanceMode?.includes('continuous')) {
+            advanced.push({ whiteBalanceMode: 'continuous' });
+          }
+          if (caps.exposureMode?.includes('continuous')) {
+            advanced.push({ exposureMode: 'continuous' });
+          }
+          if (advanced.length > 0) {
+            await track
+              .applyConstraints({ advanced: advanced as MediaTrackConstraintSet[] })
+              .catch(() => {});
+          }
         }
       })
       .catch(() => {
@@ -263,7 +301,10 @@ export const DialogPage = () => {
     setChatInput('');
     setIsChatSending(true);
     try {
-      const result = await chatMutation.mutateAsync(trimmed);
+      const result = await chatMutation.mutateAsync({
+        text: trimmed,
+        context: resultText ?? undefined,
+      });
       setMessages((prev) => [...prev, { role: 'assistant', text: result.text }]);
       announceRouteChange(`Ответ: ${result.text}`);
     } catch {

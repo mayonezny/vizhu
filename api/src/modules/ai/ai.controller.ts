@@ -39,10 +39,13 @@ export class AiController {
     return this.aiService.extractText(buffer, mimetype);
   }
 
-  // POST /api/ai/chat  { text: string }
+  // POST /api/ai/chat  { text: string, context?: string }
   @Post('chat')
-  async chat(@Body('text') text: string): Promise<unknown> {
-    return this.aiService.customChat(text);
+  async chat(
+    @Body('text') text: string,
+    @Body('context') context?: string,
+  ): Promise<unknown> {
+    return this.aiService.customChat(text, context);
   }
 
   // POST /api/ai/classify  { text: string } — команда → номер действия + уверенность

@@ -24,7 +24,8 @@ export const aiApi = {
     return api.post<OcrResult>('/ai/ocr', fd).then((r) => r.data);
   },
 
-  chat: (text: string) => api.post<ChatResult>('/ai/chat', { text }).then((r) => r.data),
+  chat: (text: string, context?: string) =>
+    api.post<ChatResult>('/ai/chat', { text, context }).then((r) => r.data),
 
   stt: (audioBlob: Blob, mimeType: string) => {
     const fd = new FormData();
