@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from models.schemas import ImageRequest, CurrencyResponse
 from services.gigachat import GigaChatService
 import logging
-import re
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

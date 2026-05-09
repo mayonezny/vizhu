@@ -1,9 +1,9 @@
 from dotenv import load_dotenv
 load_dotenv()
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from routers import describe, currency, ocr, stt, chat, classify
-import logging
+from fastapi import FastAPI  # noqa: E402
+from contextlib import asynccontextmanager  # noqa: E402
+from routers import describe, currency, ocr, stt, chat, classify  # noqa: E402
+import logging  # noqa: E402
 
 
 logging.basicConfig(level=logging.INFO)
