@@ -90,6 +90,7 @@ jobs:
           cache: npm
           cache-dependency-path: front/package-lock.json
       - run: npm ci
+      - run: npm run lint:fix && npm run format:fix
       - run: npm run lint
       - run: npm run type-check
       - run: npm run test

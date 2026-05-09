@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { CreatePostDto } from '../model/post.types';
 import { postApi } from './post.api';
+import type { CreatePostDto } from '../model/post.types';
 
 export const postKeys = {
   all: ['posts'] as const,

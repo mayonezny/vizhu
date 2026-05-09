@@ -5,9 +5,9 @@ import { useVoiceCommand } from '@/features/voice-command';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { VoiceRecordOverlay } from '@/widgets/VoiceRecordOverlay';
 
-import { QUICK_ACTIONS } from '../model/quick-actions';
 import { QuickActionButton } from './QuickActionButton';
 import { VoiceButton } from './VoiceButton';
+import { QUICK_ACTIONS } from '../model/quick-actions';
 
 import './HomePage.scss';
 

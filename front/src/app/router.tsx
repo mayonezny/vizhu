@@ -16,8 +16,12 @@ const isAuthed = () => useAuthStore.getState().isAuthed;
 const hasSeenOnboarding = () => useOnboardingStore.getState().hasSeen;
 
 const requireAuth = () => {
-  if (!isAuthed()) return redirect('/auth');
-  if (!hasSeenOnboarding()) return redirect('/onboarding');
+  if (!isAuthed()) {
+    return redirect('/auth');
+  }
+  if (!hasSeenOnboarding()) {
+    return redirect('/onboarding');
+  }
   return null;
 };
 

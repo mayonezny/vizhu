@@ -10,12 +10,18 @@ interface CounterActions {
   reset: () => void;
 }
 
-export const useCounterStore = createStore<CounterState & CounterActions>(
-  'Counter',
-  (set) => ({
-    count: 0,
-    increment: () => set((draft) => { draft.count += 1; }),
-    decrement: () => set((draft) => { draft.count -= 1; }),
-    reset: () => set((draft) => { draft.count = 0; }),
-  }),
-);
+export const useCounterStore = createStore<CounterState & CounterActions>('Counter', (set) => ({
+  count: 0,
+  increment: () =>
+    set((draft) => {
+      draft.count += 1;
+    }),
+  decrement: () =>
+    set((draft) => {
+      draft.count -= 1;
+    }),
+  reset: () =>
+    set((draft) => {
+      draft.count = 0;
+    }),
+}));
