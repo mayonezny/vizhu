@@ -1,6 +1,6 @@
 import { type ComponentType } from 'react';
 
-import { IconBanknote, IconText, IconVolunteer, IconWhatAround } from './quickActionIcons';
+import { IconBanknote, IconText, IconVolunteer, IconWhatAround } from './quick-action-icons';
 
 export type QuickAction = {
   id: string;

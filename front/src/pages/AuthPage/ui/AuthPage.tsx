@@ -1,26 +1,31 @@
 import { Phone, Play } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
+import { useAuthStore } from '@/features/auth';
+import { useOnboardingStore } from '@/features/onboarding';
+import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 import { Logo } from '@/shared/ui/Logo';
 
 import './AuthPage.scss';
 
-const DEMO_KEY = 'vizhu_demo_mode';
-const ONBOARDING_KEY = 'vizhu_onboarding_seen';
-
 export const AuthPage = () => {
   const navigate = useNavigate();
+  const login = useAuthStore((s) => s.login);
+  const hasSeen = useOnboardingStore((s) => s.hasSeen);
 
   const handleDemoMode = () => {
-    localStorage.setItem(DEMO_KEY, '1');
-    const onboardingSeen = localStorage.getItem(ONBOARDING_KEY);
-    void navigate(onboardingSeen ? '/' : '/onboarding', { replace: true });
+    login();
+    void navigate(hasSeen ? '/' : '/onboarding', { replace: true });
   };
 
-  const handlePhoneAuth = () => {};
+  const handlePhoneAuth = () => {
+    announceRouteChange('Вход по номеру телефона — функция в разработке');
+  };
 
-  const handleGosuslugiAuth = () => {};
+  const handleGosuslugiAuth = () => {
+    announceRouteChange('Вход через Госуслуги — функция в разработке');
+  };
 
   return (
     <main id="main-content" className="auth" tabIndex={-1} aria-labelledby="auth-title">

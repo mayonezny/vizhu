@@ -1,6 +1,6 @@
 import { api } from '@/shared/api';
 
-import type { Post, CreatePostDto, UpdatePostDto } from '../model/post.types';
+import type { CreatePostDto, Post, UpdatePostDto } from '../model/post.types';
 
 export const postApi = {
   getList: (): Promise<Post[]> => api.get<Post[]>('/posts').then((r) => r.data),

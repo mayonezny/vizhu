@@ -19,10 +19,8 @@ export const handlers = [
     return HttpResponse.json({ command: 1, raw: 'тестовый распознанный текст' });
   }),
 
-  // GET /posts
   http.get('*/posts', () => HttpResponse.json(MOCK_POSTS)),
 
-  // GET /posts/:id
   http.get('*/posts/:id', ({ params }) => {
     const post = MOCK_POSTS.find((p) => p.id === Number(params.id));
     if (!post) {
@@ -31,13 +29,11 @@ export const handlers = [
     return HttpResponse.json(post);
   }),
 
-  // POST /posts
   http.post('*/posts', async ({ request }) => {
     const body = (await request.json()) as Omit<Post, 'id'>;
     const newPost: Post = { id: Date.now(), ...body };
     return HttpResponse.json(newPost, { status: 201 });
   }),
 
-  // DELETE /posts/:id
   http.delete('*/posts/:id', () => new HttpResponse(null, { status: 204 })),
 ];

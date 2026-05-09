@@ -1,7 +1,8 @@
 import { createBrowserRouter, redirect } from 'react-router';
 
+import { useAuthStore } from '@/features/auth';
+import { useOnboardingStore } from '@/features/onboarding';
 import { AuthPage } from '@/pages/AuthPage';
-import { DemoPage } from '@/pages/DemoPage';
 import { DialogPage } from '@/pages/DialogPage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { HomePage } from '@/pages/HomePage';
@@ -11,19 +12,12 @@ import { OnboardingLayout } from '@/widgets/OnboardingLayout';
 import { PageLayout } from '@/widgets/PageLayout';
 import { RootLayout } from '@/widgets/RootLayout';
 
-const DEMO_KEY = 'vizhu_demo_mode';
-const ONBOARDING_KEY = 'vizhu_onboarding_seen';
-
-const isAuthed = () => Boolean(localStorage.getItem(DEMO_KEY));
-const hasSeenOnboarding = () => Boolean(localStorage.getItem(ONBOARDING_KEY));
+const isAuthed = () => useAuthStore.getState().isAuthed;
+const hasSeenOnboarding = () => useOnboardingStore.getState().hasSeen;
 
 const requireAuth = () => {
-  if (!isAuthed()) {
-    return redirect('/auth');
-  }
-  if (!hasSeenOnboarding()) {
-    return redirect('/onboarding');
-  }
+  if (!isAuthed()) return redirect('/auth');
+  if (!hasSeenOnboarding()) return redirect('/onboarding');
   return null;
 };
 
@@ -38,7 +32,6 @@ export const router = createBrowserRouter([
         loader: requireAuth,
         children: [
           { index: true, element: <HomePage />, handle: { title: 'Главная' } },
-          { path: 'demo', element: <DemoPage />, handle: { title: 'Демо' } },
           {
             path: 'history',
             element: <HistoryPage />,

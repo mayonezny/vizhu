@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { api } from '@/services/api';
+import { useVoiceCommand } from '@/features/voice-command';
+import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { VoiceRecordOverlay } from '@/widgets/VoiceRecordOverlay';
 
+import { QUICK_ACTIONS } from '../model/quick-actions';
 import { QuickActionButton } from './QuickActionButton';
-import { QUICK_ACTIONS } from './quickActions';
 import { VoiceButton } from './VoiceButton';
 
 import './HomePage.scss';
@@ -19,21 +20,19 @@ const getRouteForCommand = (command: number): string => COMMAND_ROUTES[command] 
 export const HomePage = () => {
   const navigate = useNavigate();
   const [overlayOpen, setOverlayOpen] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const { processAudio, isSending } = useVoiceCommand();
 
   const handleSend = useCallback(
     async (blob: Blob, mimeType: string) => {
-      setIsSending(true);
       try {
-        const { text } = await api.stt(blob, mimeType);
-        const { command } = await api.classify(text);
+        const { text, command } = await processAudio(blob, mimeType);
         setOverlayOpen(false);
         void navigate(getRouteForCommand(command), { state: { transcript: text, command } });
-      } finally {
-        setIsSending(false);
+      } catch {
+        announceRouteChange('Ошибка обработки запроса. Попробуйте ещё раз.');
       }
     },
-    [navigate],
+    [navigate, processAudio],
   );
 
   return (

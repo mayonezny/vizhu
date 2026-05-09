@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
+import { useAuthStore } from '@/features/auth';
+import { useOnboardingStore } from '@/features/onboarding';
 import { useSwipe } from '@/shared/lib/use-swipe';
 import { Button } from '@/shared/ui/Button';
 
@@ -8,22 +10,27 @@ import { slides } from './slides';
 
 import './OnboardingPage.scss';
 
-const STORAGE_KEY = 'vizhu_onboarding_seen';
-const DEMO_KEY = 'vizhu_demo_mode';
-
 export const OnboardingPage = () => {
   const navigate = useNavigate();
+  const isAuthed = useAuthStore((s) => s.isAuthed);
+  const hasSeen = useOnboardingStore((s) => s.hasSeen);
+  const markSeen = useOnboardingStore((s) => s.markSeen);
+
   const [current, setCurrent] = useState(0);
   const [animDir, setAnimDir] = useState<'next' | 'prev' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
-    if (!localStorage.getItem(DEMO_KEY)) {
+    if (!isAuthed) {
       void navigate('/auth', { replace: true });
-    } else if (localStorage.getItem(STORAGE_KEY)) {
+    } else if (hasSeen) {
       void navigate('/', { replace: true });
     }
-  }, [navigate]);
+  }, [isAuthed, hasSeen, navigate]);
+
+  // cleanup animation timer on unmount
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
   const goTo = useCallback(
     (next: number) => {
@@ -32,7 +39,8 @@ export const OnboardingPage = () => {
       }
       setAnimDir(next > current ? 'next' : 'prev');
       setIsAnimating(true);
-      setTimeout(() => {
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
         setCurrent(next);
         setAnimDir(null);
         setIsAnimating(false);
@@ -41,11 +49,25 @@ export const OnboardingPage = () => {
     [current, isAnimating],
   );
 
+  // Window-level keyboard listener — надёжнее чем onKeyDown на div без tabIndex
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' && current < slides.length - 1) {
+        goTo(current + 1);
+      }
+      if (e.key === 'ArrowLeft' && current > 0) {
+        goTo(current - 1);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [current, goTo]);
+
   const handleCta = () => {
     if (current < slides.length - 1) {
       goTo(current + 1);
     } else {
-      localStorage.setItem(STORAGE_KEY, '1');
+      markSeen();
       void navigate('/');
     }
   };
@@ -63,19 +85,10 @@ export const OnboardingPage = () => {
     },
   });
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowRight' && current < slides.length - 1) {
-      goTo(current + 1);
-    }
-    if (e.key === 'ArrowLeft' && current > 0) {
-      goTo(current - 1);
-    }
-  };
-
   const slide = slides[current];
 
   return (
-    <div className="ob" {...swipeHandlers} onKeyDown={onKeyDown}>
+    <div className="ob" {...swipeHandlers}>
       <p className="visually-hidden" aria-live="polite" aria-atomic="true">
         {`Слайд ${current + 1} из ${slides.length}: ${slide.title}`}
       </p>

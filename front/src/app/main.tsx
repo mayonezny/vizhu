@@ -35,7 +35,7 @@ const startApp = () => {
 
 if (import.meta.env.DEV) {
   await import('@/shared/api/mocks/browser').then(({ worker }) => {
-    void worker.start({ onUnhandledRequest: 'bypass' }).then(startApp);
+    void worker.start({ onUnhandledRequest: 'bypass' }).then(startApp).catch(startApp);
   });
 } else {
   startApp();

@@ -32,21 +32,17 @@ export const PageLayout = () => {
   const { toggle } = useTheme();
 
   const renderHeader = () => {
-    switch (handle?.headerVariant) {
-      case 'back':
-        return <TitleHeader title={handle.title} />;
-      case 'logo':
-        return <LogoHeader />;
-      default:
-        return <LogoHeader />;
+    if (handle?.headerVariant === 'back') {
+      return <TitleHeader title={handle.title} />;
     }
+    return <LogoHeader />;
   };
 
   return (
     <div className="page-layout">
       <header className="page-layout__header" role="banner">
         {renderHeader()}
-        <RoundButton icon={<Sun size={24} />} aria-label="Кнопка смены темы" onClick={toggle} />
+        <RoundButton icon={<Sun size={24} />} aria-label="Переключить тему" onClick={toggle} />
       </header>
 
       <main id="main-content" className="page-layout__main" tabIndex={-1}>
