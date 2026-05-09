@@ -108,6 +108,10 @@ jobs:
       - run: pip install -r requirements.txt -r requirements-dev.txt
       - run: ruff check .
       - run: pytest
+        env:
+          GIGACHAT_CREDENTIALS: dummy
+          YANDEX_FOLDER_ID: dummy
+          YANDEX_API_KEY: dummy
 
   build-api:
     name: Build & Push API
