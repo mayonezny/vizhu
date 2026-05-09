@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
 interface SwipeHandlers {
   onTouchStart: (e: React.TouchEvent) => void;
@@ -18,21 +18,24 @@ export const useSwipe = ({
 }: UseSwipeOptions): SwipeHandlers => {
   const startX = useRef<number>(0);
 
-  const onTouchStart = (e: React.TouchEvent) => {
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
-  };
+  }, []);
 
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const delta = startX.current - e.changedTouches[0].clientX;
-    if (Math.abs(delta) < threshold) {
-      return;
-    }
-    if (delta > 0) {
-      onSwipeLeft?.();
-    } else {
-      onSwipeRight?.();
-    }
-  };
+  const onTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const delta = startX.current - e.changedTouches[0].clientX;
+      if (Math.abs(delta) < threshold) {
+        return;
+      }
+      if (delta > 0) {
+        onSwipeLeft?.();
+      } else {
+        onSwipeRight?.();
+      }
+    },
+    [onSwipeLeft, onSwipeRight, threshold],
+  );
 
   return { onTouchStart, onTouchEnd };
 };

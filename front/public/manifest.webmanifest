@@ -2,9 +2,11 @@
   "name": "ВИЖУ — AI ассистент для незрячих",
   "short_name": "ВИЖУ",
   "description": "Eдинственный в России AI-ассистент для незрячих, работающий на отечественных мультимодальных моделях 24/7, совместимый со всеми российскими платёжными и идентификационными системами.",
+  "start_url": "/",
   "theme_color": "#1a1a1a",
   "background_color": "#ffffff",
   "display": "standalone",
+  "orientation": "portrait",
   "lang": "ru",
   "icons": [
     {

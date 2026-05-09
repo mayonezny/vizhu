@@ -29,7 +29,9 @@ export default defineConfig(async ({ mode }) => {
 
       runtimeCaching: [
         {
-          urlPattern: /^https:\/\/api\./,
+          // API URL задаётся через VITE_API_URL в .env
+          // При переносе на поддомен — обновить этот паттерн вместе с VITE_API_URL
+          urlPattern: /^https:\/\/vizhu\.su\/api/,
           handler: 'NetworkFirst',
           options: {
             cacheName: 'api-cache',
@@ -43,7 +45,8 @@ export default defineConfig(async ({ mode }) => {
     },
 
     devOptions: {
-      enabled: true, // важно: чтобы PWA работала и в dev
+      // Отключено в dev: Workbox SW конфликтует с MSW (оба регистрируются на один scope)
+      enabled: false,
     },
   });
 

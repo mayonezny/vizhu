@@ -17,8 +17,17 @@ export const Waveform = ({ analyserNode }: WaveformProps) => {
     if (!canvas) {
       return;
     }
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
+
+    const setSize = () => {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+    };
+
+    setSize();
+
+    const ro = new ResizeObserver(setSize);
+    ro.observe(canvas);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {

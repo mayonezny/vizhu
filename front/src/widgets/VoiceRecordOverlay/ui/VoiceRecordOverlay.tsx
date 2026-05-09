@@ -16,8 +16,14 @@ type Props = {
   isSending: boolean;
 };
 
+const ERROR_MESSAGES = {
+  permission_denied: 'Нет доступа к микрофону — разрешите в настройках браузера',
+  not_found: 'Микрофон не найден',
+  unknown: 'Ошибка записи. Попробуйте ещё раз.',
+} as const;
+
 export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
-  const { status, audioBlob, analyserNode, start, stop, cancel } = useVoiceRecord();
+  const { status, audioBlob, analyserNode, error, start, stop, cancel } = useVoiceRecord();
   const panelRef = useRef<HTMLDivElement>(null);
   const prevFocusRef = useRef<HTMLElement | null>(null);
 
@@ -32,6 +38,12 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
       prevFocusRef.current?.focus();
     };
   }, [start]);
+
+  useEffect(() => {
+    if (error) {
+      announceRouteChange(ERROR_MESSAGES[error]);
+    }
+  }, [error]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,13 +77,21 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
   const isActive = status === 'requesting' || status === 'recording';
   const isStopped = status === 'stopped';
 
+  const statusText = error
+    ? ERROR_MESSAGES[error]
+    : isSending
+      ? 'Отправка...'
+      : isStopped
+        ? 'Готово — нажмите Отправить'
+        : 'Говорите...';
+
   return createPortal(
     <div className="voice-overlay" role="dialog" aria-modal="true" aria-label="Запись голоса">
       <div className="voice-overlay__backdrop" onClick={handleCancel} aria-hidden="true" />
 
       <div className="voice-overlay__panel" ref={panelRef}>
         <p className="voice-overlay__status" aria-live="polite" aria-atomic="true">
-          {isSending ? 'Отправка...' : isStopped ? 'Готово — нажмите Отправить' : 'Говорите...'}
+          {statusText}
         </p>
 
         <Waveform analyserNode={analyserNode} />

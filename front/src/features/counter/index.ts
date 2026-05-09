@@ -1,1 +1,1 @@
-export { useCounterStore, useCount, useCounterStep, useCounterActions } from './model/store';
+export { useCounterStore } from './model/store';
