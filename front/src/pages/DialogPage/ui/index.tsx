@@ -43,6 +43,7 @@ export const DialogPage = () => {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [resultText, setResultText] = useState<string | null>(null);
+  const [resultIsError, setResultIsError] = useState(false);
   const [cameraErr, setCameraErr] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -119,8 +120,9 @@ export const DialogPage = () => {
 
     const scheduleCountdown = () => {
       if ((video.readyState ?? 0) >= 2) {
-        announceRouteChange(`${MODE_LABELS[mode]}. Снимок через 3 секунды.`);
-        setCountdown(3);
+        announceRouteChange(`${MODE_LABELS[mode]}. Камера готова. Нажмите кнопку для снимка.`);
+        // auto-capture disabled — пользователь снимает вручную
+        // setCountdown(3);
       } else {
         countdownTimerRef.current = setTimeout(scheduleCountdown, 200);
       }
@@ -159,13 +161,22 @@ export const DialogPage = () => {
   const runAnalysis = useCallback(
     async (file: File) => {
       setPhase('processing');
+      setResultIsError(false);
       announceRouteChange('Анализирую фото...');
       try {
         let text: string;
         if (mode === 'ocr') {
-          text = (await ocrMutation.mutateAsync(file)).text;
+          const raw = (await ocrMutation.mutateAsync(file)).text.trim();
+          text =
+            raw || 'Нейропомощнику не удалось распознать текст на фотографии, попробуйте ещё раз';
         } else if (mode === 'currency') {
-          text = (await currencyMutation.mutateAsync(file)).amount;
+          const r = await currencyMutation.mutateAsync(file);
+          if (!r.amount.trim()) {
+            text = 'Нейропомощнику не удалось распознать номинал купюры, попробуйте ещё раз';
+          } else {
+            const pct = Math.round(r.confidence * 100);
+            text = `${r.amount}. Уверенность: ${pct}%.`;
+          }
         } else {
           text = (await describeMutation.mutateAsync(file)).text;
         }
@@ -173,8 +184,10 @@ export const DialogPage = () => {
         setPhase('result');
         announceRouteChange(`Ответ от нейропомощника: ${text}`);
       } catch {
-        setPhase('camera');
-        announceRouteChange('Ошибка анализа фото. Попробуйте ещё раз.');
+        setResultText('Произошла непредвиденная ошибка. Попробуйте ещё раз.');
+        setResultIsError(true);
+        setPhase('result');
+        announceRouteChange('Произошла непредвиденная ошибка. Попробуйте ещё раз.');
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -367,23 +380,26 @@ export const DialogPage = () => {
 
         <div className="dialog-page__result" role="article">
           <p className="dialog-page__result-label">ответ от нейропомощника:</p>
-          <p className="dialog-page__result-text" aria-live="polite">
+          <p
+            className={`dialog-page__result-text${resultIsError ? ' dialog-page__result-text--error' : ''}`}
+            aria-live="polite"
+          >
             {resultText}
           </p>
         </div>
 
         <div className="dialog-page__controls" role="group" aria-label="Действия с результатом">
           <RoundButton
-            className="dialog-page__btn-cancel"
-            icon={<X size={20} aria-hidden="true" />}
-            aria-label="На главную"
-            onClick={handleGoHome}
-          />
-          <RoundButton
             className="dialog-page__btn-retake"
             icon={<RotateCcw size={24} aria-hidden="true" />}
             aria-label="Переснять"
             onClick={handleRetake}
+          />
+          <RoundButton
+            className="dialog-page__btn-cancel"
+            icon={<X size={20} aria-hidden="true" />}
+            aria-label="На главную"
+            onClick={handleGoHome}
           />
           {mode === 'describe' && (
             <RoundButton

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { useVoiceCommand } from '@/features/voice-command';
@@ -17,24 +17,61 @@ const COMMAND_ROUTES: Record<number, string> = {
   3: '/dialog?mode=currency',
 };
 
-const getRouteForCommand = (command: number): string | null => COMMAND_ROUTES[command] ?? null;
+const COMMAND_ACTION_LABELS: Record<number, string> = {
+  1: 'Открываю камеру для описания фотографии',
+  2: 'Открываю камеру для распознавания текста',
+  3: 'Открываю камеру для распознавания купюры',
+  4: 'Открываю меню вызова волонтёра',
+};
+
+const REDIRECT_DELAY_MS = 5000;
+
+type Notification = { text: string; isError: boolean };
 
 export const HomePage = () => {
   const navigate = useNavigate();
   const [overlayOpen, setOverlayOpen] = useState(false);
+  const [notification, setNotification] = useState<Notification | null>(null);
   const { processAudio, isSending } = useVoiceCommand();
+  const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (notifTimerRef.current) {
+        clearTimeout(notifTimerRef.current);
+      }
+    },
+    [],
+  );
 
   const handleSend = useCallback(
     async (blob: Blob, mimeType: string) => {
       try {
         const { text, command } = await processAudio(blob, mimeType);
         setOverlayOpen(false);
-        const route = getRouteForCommand(command);
+
+        if (notifTimerRef.current) {
+          clearTimeout(notifTimerRef.current);
+        }
+
+        const route = COMMAND_ROUTES[command] ?? null;
         if (!route) {
-          announceRouteChange('Мы не поняли, что вы хотите сделать. Повторите команду ещё раз.');
+          const msg = 'Голосовой ассистент не смог распознать вашу команду. Попробуйте ещё раз.';
+          setNotification({ text: msg, isError: true });
+          announceRouteChange(msg);
+          notifTimerRef.current = setTimeout(() => setNotification(null), 4000);
           return;
         }
-        void navigate(route, { state: { transcript: text, command } });
+
+        const actionLabel = COMMAND_ACTION_LABELS[command] ?? 'Открываю камеру';
+        const previewMsg = `Вы сказали: «${text}». ${actionLabel}.`;
+        setNotification({ text: previewMsg, isError: false });
+        announceRouteChange(previewMsg);
+
+        notifTimerRef.current = setTimeout(() => {
+          setNotification(null);
+          void navigate(route, { state: { transcript: text, command } });
+        }, REDIRECT_DELAY_MS);
       } catch {
         announceRouteChange('Ошибка обработки запроса. Попробуйте ещё раз.');
       }
@@ -64,6 +101,17 @@ export const HomePage = () => {
           ))}
         </ul>
       </section>
+
+      {notification && (
+        <div
+          className={`home-page__notification${notification.isError ? ' home-page__notification--error' : ''}`}
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <p className="home-page__notification-text">{notification.text}</p>
+        </div>
+      )}
 
       {overlayOpen && (
         <VoiceRecordOverlay

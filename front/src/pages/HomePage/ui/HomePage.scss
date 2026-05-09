@@ -29,4 +29,31 @@
     margin: 0;
     list-style: none;
   }
+
+  &__notification {
+    position: fixed;
+    right: var(--pad-4);
+    bottom: 80px;
+    left: var(--pad-4);
+    z-index: 50;
+    padding: var(--pad-4);
+    background: #fff;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px rgb(0 0 0 / 15%);
+
+    &--error {
+      background: var(--color-danger);
+    }
+  }
+
+  &__notification-text {
+    @include m.text-16;
+
+    margin: 0;
+    color: #0b0f14;
+
+    .home-page__notification--error & {
+      color: #fff;
+    }
+  }
 }
