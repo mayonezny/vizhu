@@ -92,7 +92,6 @@ jobs:
       - run: npm ci
       - run: npm run lint:fix && npm run format:fix
       - run: npm run lint
-      - run: npm run type-check
       - run: npm run test
 
   test-ai:

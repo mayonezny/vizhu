@@ -65,13 +65,13 @@ describe('PageLayout', () => {
 
   it('рендерит кнопку смены темы', () => {
     renderLayout();
-    expect(screen.getByRole('button', { name: 'Кнопка смены темы' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Переключить тему' })).toBeInTheDocument();
   });
 
   it('кнопка смены темы вызывает toggle', async () => {
     const user = userEvent.setup();
     renderLayout();
-    await user.click(screen.getByRole('button', { name: 'Кнопка смены темы' }));
+    await user.click(screen.getByRole('button', { name: 'Переключить тему' }));
     expect(mockToggle).toHaveBeenCalledOnce();
   });
 
