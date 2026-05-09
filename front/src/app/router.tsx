@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth';
 import { useOnboardingStore } from '@/features/onboarding';
 import { AuthPage } from '@/pages/AuthPage';
 import { DialogPage } from '@/pages/DialogPage';
+import { HistoryDetailPage } from '@/pages/HistoryDetailPage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
         children: [{ path: 'onboarding', element: <OnboardingPage /> }],
       },
       { path: 'dialog', element: <DialogPage />, loader: requireAuth },
+      { path: 'history/:id', element: <HistoryDetailPage />, loader: requireAuth },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
