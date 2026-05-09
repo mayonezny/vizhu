@@ -6,9 +6,9 @@ export const api = axios.create({
   baseURL: env.apiUrl,
   timeout: env.apiTimeout,
   withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // Content-Type не задаём явно — axios выставляет его сам:
+  // plain object → application/json
+  // FormData    → multipart/form-data; boundary=... (boundary проставляет браузер)
 });
 
 // ─── Request-интерсептор ──────────────────────────────────────────────────────
