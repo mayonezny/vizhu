@@ -97,14 +97,6 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
         <Waveform analyserNode={analyserNode} />
 
         <div className="voice-overlay__controls" role="group" aria-label="Управление записью">
-          <RoundButton
-            className="voice-overlay__btn-cancel"
-            icon={<X size={20} aria-hidden="true" />}
-            aria-label="Отменить запись"
-            disabled={isSending}
-            onClick={handleCancel}
-          />
-
           {isActive && (
             <RoundButton
               className="voice-overlay__btn-mic"
@@ -129,6 +121,14 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
               onClick={() => void handleSend()}
             />
           )}
+
+          <RoundButton
+            className="voice-overlay__btn-cancel"
+            icon={<X size={20} aria-hidden="true" />}
+            aria-label="Отменить запись"
+            disabled={isSending}
+            onClick={handleCancel}
+          />
         </div>
       </div>
     </div>,

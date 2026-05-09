@@ -15,7 +15,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'what-around',
     label: 'Что вокруг',
-    to: '/dialog',
+    to: '/dialog?mode=describe',
     prompt: 'Опиши, что находится вокруг меня',
     Icon: IconWhatAround,
     ariaLabel: 'Что вокруг — описать окружение',
@@ -23,7 +23,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'text',
     label: 'Текст',
-    to: '/dialog',
+    to: '/dialog?mode=ocr',
     prompt: 'Прочитай текст перед камерой',
     Icon: IconText,
     ariaLabel: 'Текст — прочитать текст перед камерой',
@@ -31,7 +31,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'banknote',
     label: 'Купюры',
-    to: '/dialog',
+    to: '/dialog?mode=currency',
     prompt: 'Определи номинал купюры перед камерой',
     Icon: IconBanknote,
     ariaLabel: 'Купюры — определить номинал',

@@ -1,25 +1,30 @@
 import { api } from './axios';
 
+export type DescribeResult = { text: string; model: string };
+export type OcrResult = { text: string; model: string };
+export type CurrencyResult = { amount: string; confidence: number };
+export type ChatResult = { text: string; model: string };
+
 export const aiApi = {
-  describe: (imageFile: File, mode: 'short' | 'detailed' = 'short') => {
+  describe: (imageFile: File, mode: 'short' | 'detailed' = 'detailed') => {
     const fd = new FormData();
     fd.append('image', imageFile);
-    return api
-      .post<{ description: string }>('/ai/describe', fd, { params: { mode } })
-      .then((r) => r.data);
+    return api.post<DescribeResult>('/ai/describe', fd, { params: { mode } }).then((r) => r.data);
   },
 
   currency: (imageFile: File) => {
     const fd = new FormData();
     fd.append('image', imageFile);
-    return api.post<{ denomination: string }>('/ai/currency', fd).then((r) => r.data);
+    return api.post<CurrencyResult>('/ai/currency', fd).then((r) => r.data);
   },
 
   ocr: (imageFile: File) => {
     const fd = new FormData();
     fd.append('image', imageFile);
-    return api.post<{ text: string }>('/ai/ocr', fd).then((r) => r.data);
+    return api.post<OcrResult>('/ai/ocr', fd).then((r) => r.data);
   },
+
+  chat: (text: string) => api.post<ChatResult>('/ai/chat', { text }).then((r) => r.data),
 
   stt: (audioBlob: Blob, mimeType: string) => {
     const fd = new FormData();

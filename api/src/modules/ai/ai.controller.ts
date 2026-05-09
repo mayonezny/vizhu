@@ -19,7 +19,7 @@ export class AiController {
   @Post('describe')
   async describe(
     @Req() req: object,
-    @Query('mode') mode: DescribeMode = 'short',
+    @Query('mode') mode: DescribeMode = 'detailed',
   ): Promise<unknown> {
     const { buffer, mimetype } = await this.extractFile(req);
     return this.aiService.describeScene(buffer, mimetype, mode);

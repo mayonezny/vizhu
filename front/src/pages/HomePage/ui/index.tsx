@@ -12,10 +12,12 @@ import { QUICK_ACTIONS } from '../model/quick-actions';
 import './HomePage.scss';
 
 const COMMAND_ROUTES: Record<number, string> = {
-  1: '/dialog',
+  1: '/dialog?mode=describe',
+  2: '/dialog?mode=ocr',
+  3: '/dialog?mode=currency',
 };
 
-const getRouteForCommand = (command: number): string => COMMAND_ROUTES[command] ?? '/dialog';
+const getRouteForCommand = (command: number): string | null => COMMAND_ROUTES[command] ?? null;
 
 export const HomePage = () => {
   const navigate = useNavigate();
@@ -27,7 +29,12 @@ export const HomePage = () => {
       try {
         const { text, command } = await processAudio(blob, mimeType);
         setOverlayOpen(false);
-        void navigate(getRouteForCommand(command), { state: { transcript: text, command } });
+        const route = getRouteForCommand(command);
+        if (!route) {
+          announceRouteChange('Мы не поняли, что вы хотите сделать. Повторите команду ещё раз.');
+          return;
+        }
+        void navigate(route, { state: { transcript: text, command } });
       } catch {
         announceRouteChange('Ошибка обработки запроса. Попробуйте ещё раз.');
       }
