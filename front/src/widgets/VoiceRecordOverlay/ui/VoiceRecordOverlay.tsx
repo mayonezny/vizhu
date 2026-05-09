@@ -1,5 +1,5 @@
-import { Loader2, Mic, Send, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { Loader2, Mic, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
@@ -26,6 +26,11 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
   const { status, audioBlob, analyserNode, error, start, stop, cancel } = useVoiceRecord();
   const panelRef = useRef<HTMLDivElement>(null);
   const prevFocusRef = useRef<HTMLElement | null>(null);
+  const shouldAutoSendRef = useRef(false);
+  const onSendRef = useRef(onSend);
+  onSendRef.current = onSend;
+
+  const [isAutoSending, setIsAutoSending] = useState(false);
 
   useEffect(() => {
     prevFocusRef.current = document.activeElement as HTMLElement;
@@ -47,26 +52,31 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isSending) {
+      if (e.key === 'Escape' && !isSending && !isAutoSending) {
         cancel();
         onClose();
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [cancel, isSending, onClose]);
+  }, [cancel, isAutoSending, isSending, onClose]);
 
-  const handleStop = () => {
-    stop();
-    announceRouteChange('Запись остановлена. Нажмите Отправить.');
-  };
-
-  const handleSend = async () => {
-    if (!audioBlob) {
+  // Auto-send as soon as the blob is ready after manual stop
+  useEffect(() => {
+    if (status !== 'stopped' || !audioBlob || !shouldAutoSendRef.current) {
       return;
     }
+    shouldAutoSendRef.current = false;
     announceRouteChange('Отправка...');
-    await onSend(audioBlob, audioBlob.type || 'audio/webm');
+    setIsAutoSending(true);
+    void onSendRef.current(audioBlob, audioBlob.type || 'audio/webm').finally(() => {
+      setIsAutoSending(false);
+    });
+  }, [status, audioBlob]);
+
+  const handleStop = () => {
+    shouldAutoSendRef.current = true;
+    stop();
   };
 
   const handleCancel = () => {
@@ -75,15 +85,9 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
   };
 
   const isActive = status === 'requesting' || status === 'recording';
-  const isStopped = status === 'stopped';
+  const isBusy = isSending || isAutoSending;
 
-  const statusText = error
-    ? ERROR_MESSAGES[error]
-    : isSending
-      ? 'Отправка...'
-      : isStopped
-        ? 'Готово — нажмите Отправить'
-        : 'Говорите...';
+  const statusText = error ? ERROR_MESSAGES[error] : isBusy ? 'Отправка...' : 'Говорите...';
 
   return createPortal(
     <div className="voice-overlay" role="dialog" aria-modal="true" aria-label="Запись голоса">
@@ -101,24 +105,17 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
             <RoundButton
               className="voice-overlay__btn-mic"
               icon={<Mic size={28} aria-hidden="true" />}
-              aria-label="Остановить запись"
+              aria-label="Остановить запись и отправить"
               onClick={handleStop}
             />
           )}
 
-          {isStopped && (
+          {isBusy && (
             <RoundButton
-              className="voice-overlay__btn-send"
-              icon={
-                isSending ? (
-                  <Loader2 size={20} className="voice-overlay__spinner" aria-hidden="true" />
-                ) : (
-                  <Send size={20} aria-hidden="true" />
-                )
-              }
-              aria-label="Отправить запись"
-              disabled={isSending || !audioBlob}
-              onClick={() => void handleSend()}
+              className="voice-overlay__btn-sending"
+              icon={<Loader2 size={28} className="voice-overlay__spinner" aria-hidden="true" />}
+              aria-label="Отправка..."
+              disabled
             />
           )}
 
@@ -126,7 +123,7 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
             className="voice-overlay__btn-cancel"
             icon={<X size={20} aria-hidden="true" />}
             aria-label="Отменить запись"
-            disabled={isSending}
+            disabled={isBusy}
             onClick={handleCancel}
           />
         </div>
