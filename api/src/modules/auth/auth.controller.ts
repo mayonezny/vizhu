@@ -42,12 +42,19 @@ const COOKIE_OPTIONS: Record<string, unknown> = {
 };
 
 class SendOtpBody {
-  @ApiProperty({ example: '+79001234567', description: 'Номер телефона' })
+  @ApiProperty({
+    example: '79001234567',
+    description:
+      'Номер телефона. Принимается любой формат: 79001234567, +7(900)123-45-67, 8-900-123-45-67',
+  })
   phone?: unknown;
 }
 
 class VerifyOtpBody {
-  @ApiProperty({ example: '+79001234567' })
+  @ApiProperty({
+    example: '79001234567',
+    description: 'Номер телефона в любом формате',
+  })
   phone?: unknown;
 
   @ApiProperty({ example: '1234', description: '4-значный код из звонка' })
@@ -66,7 +73,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Звонок инициирован' })
   @ApiResponse({ status: 400, description: 'Неверный формат номера' })
   async sendOtp(@Body() body: SendOtpBody) {
-    const phone = body.phone;
+    const { phone } = body;
     if (typeof phone !== 'string' || !/^[\d+\-()\s]+$/.test(phone)) {
       throw new BadRequestException('Неверный формат номера телефона');
     }

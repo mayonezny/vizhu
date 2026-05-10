@@ -54,7 +54,6 @@ export class UsersController {
     @Body() body: CreateProfileBody,
   ) {
     const { name, age, blindnessTypeId } = body;
-
     if (typeof name !== 'string' || name.trim().length < 2) {
       throw new BadRequestException('Укажите имя (минимум 2 символа)');
     }
