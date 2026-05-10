@@ -43,6 +43,6 @@ class GigaChatService:
                         attachments=[uploaded.id_]  # передаём id загруженного файла
                     )
                 ],
-                model="GigaChat-2-Max"
+                model="GigaChat-2-Pro"
             ))
             return response.choices[0].message.content, response.model
