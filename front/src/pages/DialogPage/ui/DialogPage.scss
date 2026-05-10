@@ -147,6 +147,23 @@
     margin: 0 var(--pad-4);
     background: #fff;
     border-radius: var(--radius-lg);
+    transition: opacity 150ms ease, transform 150ms ease;
+    touch-action: none;
+    user-select: none;
+
+    &--held {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+    }
+  }
+
+  &__result-hint {
+    @include m.text-12;
+
+    margin: var(--space-2) 0 0;
+    color: #9ca3af;
+    text-align: center;
   }
 
   &__result-label {
