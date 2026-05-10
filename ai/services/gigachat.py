@@ -22,7 +22,7 @@ class GigaChatService:
         with self._client() as giga:
             response = giga.chat(Chat(
                 messages=[Messages(role=MessagesRole.USER, content=text)],
-                model="GigaChat-2-Max",
+                model="GigaChat-2-Pro",
             ))
             return response.choices[0].message.content, response.model
 

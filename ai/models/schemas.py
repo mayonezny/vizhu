@@ -53,7 +53,4 @@ class ClassifyRequest(BaseModel):
 class ClassifyResponse(BaseModel):
     command: int   # 0 — не распознано, 1–5 — команда
     raw: str       # ответ GigaChat для отладки
-{
-    "command": 1,
-    "raw": "яП Идарас!"
-}
+
