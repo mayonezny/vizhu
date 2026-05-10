@@ -63,9 +63,10 @@ services:
       AI_SERVICE_URL: http://ai:8000
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: 7d
-    # depends_on:
-    #   postgres:
-    #     condition: service_healthy
+      SMSC_API_KEY: ${SMSC_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
     #   redis:
     #     condition: service_healthy
     healthcheck:
@@ -99,8 +100,6 @@ services:
       retries: 3
 
   postgres:
-    profiles:
-      - max
     image: postgres:16-alpine
     container_name: vizhu_postgres
     restart: unless-stopped
