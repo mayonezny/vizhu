@@ -146,7 +146,7 @@
     max-height: 55dvh;
     padding: var(--pad-4);
     margin: 0 var(--pad-4);
-    overflow-y: auto;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
     background: #fff;
     border-radius: var(--radius-lg);

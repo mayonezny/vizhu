@@ -340,7 +340,7 @@ export const DialogPage = () => {
     holdTimerRef.current = setTimeout(() => {
       holdTimerRef.current = null;
       setIsBubbleHeld(true);
-    }, 900);
+    }, 600);
   }, []);
 
   const handleRetake = () => {
