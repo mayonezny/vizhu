@@ -16,7 +16,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production', // в проде — миграции
+      synchronize: true, // в проде — миграции
     }),
 
     HttpModule.register({ timeout: 15000 }), // 15с для AI-запросов
