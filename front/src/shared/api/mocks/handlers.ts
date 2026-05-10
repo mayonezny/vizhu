@@ -314,6 +314,11 @@ export const handlers = [
     });
   }),
 
+  http.post('*/registration', async () => {
+    await new Promise((r) => setTimeout(r, 700));
+    return HttpResponse.json({ ok: true });
+  }),
+
   http.get('*/history', () => HttpResponse.json(MOCK_HISTORY)),
 
   http.get('*/history/:id', ({ params }) => {

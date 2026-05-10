@@ -3,6 +3,7 @@ import { createBrowserRouter, redirect } from 'react-router';
 import { useAuthStore } from '@/features/auth';
 import { useOnboardingStore } from '@/features/onboarding';
 import { AuthPage } from '@/pages/AuthPage';
+import { CallCodePage } from '@/pages/CallCodePage';
 import { DialogPage } from '@/pages/DialogPage';
 import { HistoryDetailPage } from '@/pages/HistoryDetailPage';
 import { HistoryPage } from '@/pages/HistoryPage';
@@ -10,7 +11,10 @@ import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { PhoneAuthPage } from '@/pages/PhoneAuthPage';
-import { SmsCodePage } from '@/pages/SmsCodePage';
+import { RegistrationIpraPage } from '@/pages/RegistrationIpraPage';
+import { RegistrationNamePage } from '@/pages/RegistrationNamePage';
+import { RegistrationPermissionsPage } from '@/pages/RegistrationPermissionsPage';
+import { RegistrationVisionPage } from '@/pages/RegistrationVisionPage';
 import { WelcomePage } from '@/pages/WelcomePage';
 import { OnboardingLayout } from '@/widgets/OnboardingLayout';
 import { PageLayout } from '@/widgets/PageLayout';
@@ -29,18 +33,18 @@ const requireAuth = () => {
   return null;
 };
 
+const requireAuthOnly = () => {
+  if (!isAuthed()) {
+    return redirect('/auth');
+  }
+  return null;
+};
+
 const redirectIfAuthed = () => (isAuthed() ? redirect('/') : null);
 
 const requirePhone = () => {
   if (!useAuthStore.getState().phone) {
     return redirect('/auth/phone');
-  }
-  return null;
-};
-
-const requireAuthForWelcome = () => {
-  if (!isAuthed()) {
-    return redirect('/auth');
   }
   return null;
 };
@@ -67,13 +71,19 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <AuthPage /> },
           { path: 'phone', element: <PhoneAuthPage /> },
-          { path: 'code', element: <SmsCodePage />, loader: requirePhone },
+          { path: 'code', element: <CallCodePage />, loader: requirePhone },
         ],
       },
       {
-        path: 'auth/welcome',
-        element: <WelcomePage />,
-        loader: requireAuthForWelcome,
+        path: 'registration',
+        loader: requireAuthOnly,
+        children: [
+          { path: 'name', element: <RegistrationNamePage /> },
+          { path: 'vision', element: <RegistrationVisionPage /> },
+          { path: 'ipra', element: <RegistrationIpraPage /> },
+          { path: 'permissions', element: <RegistrationPermissionsPage /> },
+          { path: 'welcome', element: <WelcomePage /> },
+        ],
       },
       {
         element: <OnboardingLayout />,

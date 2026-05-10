@@ -9,14 +9,14 @@ import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 import { RoundButton } from '@/shared/ui/RoundButton';
 
-import './SmsCodePage.scss';
+import './CallCodePage.scss';
 
 const CODE_LENGTH = 4;
 const RESEND_SECONDS = 60;
 
 const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-export const SmsCodePage = () => {
+export const CallCodePage = () => {
   const navigate = useNavigate();
   const phone = useAuthStore((s) => s.phone);
   const login = useAuthStore((s) => s.login);
@@ -30,7 +30,9 @@ export const SmsCodePage = () => {
   const refs = useRef<Array<HTMLInputElement | null>>(Array(CODE_LENGTH).fill(null));
 
   useEffect(() => {
-    announceRouteChange(`Введите код из SMS, отправленного на номер ${phone ?? 'ваш телефон'}`);
+    announceRouteChange(
+      `Ожидайте звонка на номер ${phone ?? 'ваш телефон'}. Введите продиктованные цифры.`,
+    );
     refs.current[0]?.focus();
   }, [phone]);
 
@@ -106,7 +108,7 @@ export const SmsCodePage = () => {
       const { data } = await authApi.verifyCode(phone ?? '', code);
       login({ phone: data.user.phone, userName: data.user.name });
       if (data.user.is_new) {
-        void navigate('/auth/welcome', { replace: true });
+        void navigate('/registration/name', { replace: true });
       } else {
         void navigate(hasSeen ? '/' : '/onboarding', { replace: true });
       }
@@ -114,7 +116,7 @@ export const SmsCodePage = () => {
       if (axios.isAxiosError(err)) {
         const errorCode = err.response?.data?.error;
         if (errorCode === 'code_expired') {
-          setError('Код устарел. Нажмите «Отправить ещё раз».');
+          setError('Код устарел. Нажмите «Позвонить ещё раз».');
           setSecondsLeft(0);
         } else {
           setError('Неверный код. Проверьте и попробуйте снова.');
@@ -138,9 +140,9 @@ export const SmsCodePage = () => {
       setDigits(Array(CODE_LENGTH).fill(''));
       setError(null);
       refs.current[0]?.focus();
-      announceRouteChange('Код отправлен повторно');
+      announceRouteChange('Звонок отправлен повторно');
     } catch {
-      setError('Не удалось отправить код. Попробуйте позже.');
+      setError('Не удалось совершить звонок. Попробуйте позже.');
     }
   };
 
@@ -149,8 +151,8 @@ export const SmsCodePage = () => {
     : 'ваш номер';
 
   return (
-    <main id="main-content" className="sms-code" tabIndex={-1} aria-labelledby="sms-title">
-      <div className="sms-code__back">
+    <main id="main-content" className="call-code" tabIndex={-1} aria-labelledby="sms-title">
+      <div className="call-code__back">
         <RoundButton
           aria-label="Назад"
           icon={<ChevronLeft size={24} />}
@@ -158,31 +160,31 @@ export const SmsCodePage = () => {
         />
       </div>
 
-      <div className="sms-code__head">
-        <h1 id="sms-title" className="sms-code__title">
-          Код из SMS
+      <div className="call-code__head">
+        <h1 id="sms-title" className="call-code__title">
+          Звонок на ваш номер
         </h1>
-        <p className="sms-code__desc">
-          На <strong>{maskedPhone}</strong> отправлен {CODE_LENGTH}-значный код.
+        <p className="call-code__desc">
+          Звоним на <strong>{maskedPhone}</strong>. Введите {CODE_LENGTH} цифры, которые продиктуют.
         </p>
       </div>
 
       <form
-        className="sms-code__form"
+        className="call-code__form"
         onSubmit={handleSubmit}
         noValidate
-        aria-label="Форма ввода кода из SMS"
+        aria-label="Форма ввода кода из звонка"
       >
-        <fieldset className="sms-code__fieldset" aria-label="Введите 4 цифры кода">
-          <legend className="visually-hidden">Код из SMS</legend>
-          <div className="sms-code__boxes" onPaste={handlePaste}>
+        <fieldset className="call-code__fieldset" aria-label="Введите 4 цифры кода из звонка">
+          <legend className="visually-hidden">Код из звонка</legend>
+          <div className="call-code__boxes" onPaste={handlePaste}>
             {digits.map((digit, i) => (
               <input
                 key={i}
                 ref={(el) => {
                   refs.current[i] = el;
                 }}
-                className={['sms-code__box', error && 'sms-code__box--error']
+                className={['call-code__box', error && 'call-code__box--error']
                   .filter(Boolean)
                   .join(' ')}
                 type="text"
@@ -200,31 +202,31 @@ export const SmsCodePage = () => {
             ))}
           </div>
           {error && (
-            <p className="sms-code__error" role="alert">
+            <p className="call-code__error" role="alert">
               {error}
             </p>
           )}
         </fieldset>
 
-        <div className="sms-code__resend">
+        <div className="call-code__resend">
           {secondsLeft > 0 ? (
             <p aria-live="polite" aria-atomic="true">
-              Отправить ещё раз через{' '}
-              <span className="sms-code__timer">{formatTime(secondsLeft)}</span>
+              Позвонить ещё раз через{' '}
+              <span className="call-code__timer">{formatTime(secondsLeft)}</span>
             </p>
           ) : (
             <button
               type="button"
-              className="sms-code__resend-btn"
+              className="call-code__resend-btn"
               onClick={handleResend}
-              aria-label="Отправить код повторно"
+              aria-label="Позвонить повторно"
             >
-              Отправить ещё раз
+              Позвонить ещё раз
             </button>
           )}
         </div>
 
-        <Button type="submit" disabled={isLoading} aria-label="Подтвердить код из SMS">
+        <Button type="submit" disabled={isLoading} aria-label="Подтвердить код из звонка">
           {isLoading ? 'Проверяем...' : 'Подтвердить'}
         </Button>
       </form>

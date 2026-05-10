@@ -1,6 +1,6 @@
 @use 'shared/styles/_mixins' as m;
 
-.sms-code {
+.call-code {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
