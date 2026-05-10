@@ -20,7 +20,7 @@ export const AuthPage = () => {
   };
 
   const handlePhoneAuth = () => {
-    announceRouteChange('Вход по номеру телефона — функция в разработке');
+    void navigate('/auth/phone');
   };
 
   const handleGosuslugiAuth = () => {

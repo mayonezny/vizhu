@@ -9,6 +9,9 @@ import { HistoryPage } from '@/pages/HistoryPage';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
+import { PhoneAuthPage } from '@/pages/PhoneAuthPage';
+import { SmsCodePage } from '@/pages/SmsCodePage';
+import { WelcomePage } from '@/pages/WelcomePage';
 import { OnboardingLayout } from '@/widgets/OnboardingLayout';
 import { PageLayout } from '@/widgets/PageLayout';
 import { RootLayout } from '@/widgets/RootLayout';
@@ -28,6 +31,20 @@ const requireAuth = () => {
 
 const redirectIfAuthed = () => (isAuthed() ? redirect('/') : null);
 
+const requirePhone = () => {
+  if (!useAuthStore.getState().phone) {
+    return redirect('/auth/phone');
+  }
+  return null;
+};
+
+const requireAuthForWelcome = () => {
+  if (!isAuthed()) {
+    return redirect('/auth');
+  }
+  return null;
+};
+
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -46,8 +63,17 @@ export const router = createBrowserRouter([
       },
       {
         path: 'auth',
-        element: <AuthPage />,
         loader: redirectIfAuthed,
+        children: [
+          { index: true, element: <AuthPage /> },
+          { path: 'phone', element: <PhoneAuthPage /> },
+          { path: 'code', element: <SmsCodePage />, loader: requirePhone },
+        ],
+      },
+      {
+        path: 'auth/welcome',
+        element: <WelcomePage />,
+        loader: requireAuthForWelcome,
       },
       {
         element: <OnboardingLayout />,
