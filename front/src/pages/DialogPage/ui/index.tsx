@@ -127,9 +127,9 @@ export const DialogPage = () => {
             advanced.push({ exposureMode: 'continuous' });
           }
           // getUserMedia на Android часто выбирает ультраширокий объектив (0.6x).
-          // Зум ~2x приближает картинку к основному объективу (1x в нативной камере).
+          // Зум ~1.3x приближает картинку к основному объективу (1x в нативной камере).
           if (caps.zoom) {
-            const targetZoom = Math.min(2, caps.zoom.max);
+            const targetZoom = Math.min(1.3, caps.zoom.max);
             advanced.push({ zoom: targetZoom });
           }
 
@@ -269,8 +269,9 @@ export const DialogPage = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ic = new (window as any).ImageCapture(track);
         blob = (await ic.takePhoto()) as Blob;
-      } catch {
-        // fallback ниже
+        console.log('[capture] ImageCapture.takePhoto()', `${(blob.size / 1024).toFixed(0)} KB`, blob.type);
+      } catch (e) {
+        console.warn('[capture] ImageCapture failed, fallback to canvas', e);
       }
     }
 
@@ -285,6 +286,9 @@ export const DialogPage = () => {
       }
       ctx.drawImage(video, 0, 0);
       blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.92));
+      if (blob) {
+        console.log('[capture] canvas fallback', `${(blob.size / 1024).toFixed(0)} KB`, blob.type);
+      }
     }
 
     track.stop();
