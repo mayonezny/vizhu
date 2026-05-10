@@ -1,8 +1,9 @@
+import axios from 'axios';
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { useAuthStore } from '@/features/auth';
+import { authApi, useAuthStore } from '@/features/auth';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 import { RoundButton } from '@/shared/ui/RoundButton';
@@ -21,6 +22,7 @@ export const SmsCodePage = () => {
 
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
 
   const refs = useRef<Array<HTMLInputElement | null>>(Array(CODE_LENGTH).fill(null));
@@ -86,7 +88,7 @@ export const SmsCodePage = () => {
     refs.current[focusIndex]?.focus();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = digits.join('');
     if (code.length < CODE_LENGTH) {
@@ -94,15 +96,46 @@ export const SmsCodePage = () => {
       refs.current[digits.findIndex((d) => !d)]?.focus();
       return;
     }
-    login({ phone: phone ?? undefined });
-    void navigate('/auth/welcome', { replace: true });
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data } = await authApi.verifyCode(phone ?? '', code);
+      login({ phone: data.user.phone, userName: data.user.name });
+      void navigate('/auth/welcome', { replace: true });
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const errorCode = err.response?.data?.error;
+        if (errorCode === 'code_expired') {
+          setError('Код устарел. Нажмите «Отправить ещё раз».');
+          setSecondsLeft(0);
+        } else {
+          setError('Неверный код. Проверьте и попробуйте снова.');
+        }
+      } else {
+        setError('Не удалось проверить код. Попробуйте позже.');
+      }
+      refs.current[0]?.focus();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleResend = () => {
-    setSecondsLeft(RESEND_SECONDS);
-    setDigits(Array(CODE_LENGTH).fill(''));
-    refs.current[0]?.focus();
-    announceRouteChange('Код отправлен повторно');
+  const handleResend = async () => {
+    if (!phone) {
+      return;
+    }
+    try {
+      await authApi.requestCode(phone);
+      setSecondsLeft(RESEND_SECONDS);
+      setDigits(Array(CODE_LENGTH).fill(''));
+      setError(null);
+      refs.current[0]?.focus();
+      announceRouteChange('Код отправлен повторно');
+    } catch {
+      setError('Не удалось отправить код. Попробуйте позже.');
+    }
   };
 
   const maskedPhone = phone
@@ -154,6 +187,7 @@ export const SmsCodePage = () => {
                 aria-label={`Цифра ${i + 1} из ${CODE_LENGTH}`}
                 aria-invalid={error ? 'true' : undefined}
                 autoComplete={i === 0 ? 'one-time-code' : 'off'}
+                disabled={isLoading}
                 onChange={(e) => updateDigit(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
               />
@@ -184,8 +218,8 @@ export const SmsCodePage = () => {
           )}
         </div>
 
-        <Button type="submit" aria-label="Подтвердить код из SMS">
-          Подтвердить
+        <Button type="submit" disabled={isLoading} aria-label="Подтвердить код из SMS">
+          {isLoading ? 'Проверяем...' : 'Подтвердить'}
         </Button>
       </form>
     </main>

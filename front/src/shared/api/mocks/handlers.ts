@@ -229,6 +229,49 @@ const MOCK_HISTORY: HistoryEntry[] = [
 ];
 
 export const handlers = [
+  // ─── Auth ──────────────────────────────────────────────────────────────────
+  // Запрос кода: любой номер → успех через ~600 мс
+  http.post('*/auth/request-code', async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    return HttpResponse.json({ ok: true, expires_in: 300 });
+  }),
+
+  // Верификация кода:
+  //   0000 → неверный код (400)
+  //   9999 → код устарел (410)
+  //   любой другой 4-значный → успех
+  http.post('*/auth/verify-code', async ({ request }) => {
+    await new Promise((r) => setTimeout(r, 800));
+
+    const { phone, code } = (await request.json()) as { phone: string; code: string };
+
+    if (code === '0000') {
+      return HttpResponse.json(
+        { error: 'invalid_code', message: 'Неверный код. Проверьте и попробуйте снова.' },
+        { status: 400 },
+      );
+    }
+
+    if (code === '9999') {
+      return HttpResponse.json(
+        { error: 'code_expired', message: 'Код устарел. Запросите новый.' },
+        { status: 410 },
+      );
+    }
+
+    return HttpResponse.json({
+      access_token: 'mock-access-token',
+      refresh_token: 'mock-refresh-token',
+      user: {
+        id: 'mock-user-id',
+        name: 'Светлана',
+        phone,
+        is_new: true,
+      },
+    });
+  }),
+
+  // ─── AI ────────────────────────────────────────────────────────────────────
   http.post('*/ai/stt', async () => {
     await new Promise((r) => setTimeout(r, 800));
     return HttpResponse.json({ text: 'тестовый распознанный текст' });

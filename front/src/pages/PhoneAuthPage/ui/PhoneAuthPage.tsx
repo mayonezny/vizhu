@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
 import { ChevronLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
 
-import { useAuthStore } from '@/features/auth';
+import { authApi, useAuthStore } from '@/features/auth';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
@@ -33,6 +34,7 @@ export const PhoneAuthPage = () => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(phoneSchema),
@@ -43,11 +45,21 @@ export const PhoneAuthPage = () => {
     announceRouteChange('Ввод номера телефона');
   }, []);
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     const digits = data.phone.replace(/\D/g, '');
     const normalized = digits.length === 10 ? `+7${digits}` : `+${digits}`;
-    setPhone(normalized);
-    void navigate('/auth/code');
+
+    try {
+      await authApi.requestCode(normalized);
+      setPhone(normalized);
+      void navigate('/auth/code');
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 429) {
+        setError('phone', { message: 'Слишком много запросов. Подождите немного.' });
+      } else {
+        setError('phone', { message: 'Не удалось отправить SMS. Попробуйте позже.' });
+      }
+    }
   };
 
   return (
@@ -90,7 +102,7 @@ export const PhoneAuthPage = () => {
         </p>
 
         <Button type="submit" disabled={isSubmitting} aria-label="Получить код подтверждения">
-          Получить код
+          {isSubmitting ? 'Отправляем...' : 'Получить код'}
         </Button>
       </form>
     </main>
