@@ -6,21 +6,24 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SmsService } from '../sms/sms.service';
 import { OtpCode } from './otp-code.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { PhoneAccount } from '../users/entities/phone-account.entity';
+import { JwtAuthGuard } from '../../common/guards/jwt.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([OtpCode]),
+    TypeOrmModule.forFeature([OtpCode, PhoneAccount, RefreshToken]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '30d' },
+        signOptions: { expiresIn: '15m' },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, SmsService],
-  exports: [AuthService, JwtModule],
+  providers: [AuthService, SmsService, JwtAuthGuard],
+  exports: [AuthService, JwtModule, JwtAuthGuard],
 })
 export class AuthModule {}
