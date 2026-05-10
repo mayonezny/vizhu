@@ -63,6 +63,7 @@ services:
       AI_SERVICE_URL: http://ai:8000
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: 7d
+      SMSC_API_KEY: ${SMSC_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
