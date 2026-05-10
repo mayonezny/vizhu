@@ -1,11 +1,8 @@
-import { Check } from 'lucide-react';
-
 import { Button } from '@/shared/ui/Button';
-
 import './SuccessScreen.scss';
+import { Logo } from '@/shared/ui/Logo';
 
 type SuccessScreenProps = {
-  userName?: string;
   title: string;
   subtitle?: string;
   primaryLabel: string;
@@ -15,7 +12,6 @@ type SuccessScreenProps = {
 };
 
 export const SuccessScreen = ({
-  userName,
   title,
   subtitle,
   primaryLabel,
@@ -24,16 +20,9 @@ export const SuccessScreen = ({
   onSecondary,
 }: SuccessScreenProps) => (
   <main id="main-content" className="success-screen" tabIndex={-1} aria-labelledby="success-title">
-    <div className="success-screen__icon" aria-hidden="true">
-      <Check size={48} strokeWidth={3} />
-    </div>
+    <Logo className="success-screen__logo" />
 
     <div className="success-screen__content">
-      {userName && (
-        <p className="success-screen__name" aria-hidden="true">
-          {userName.toUpperCase()}
-        </p>
-      )}
       <h1 id="success-title" className="success-screen__title">
         {title}
       </h1>

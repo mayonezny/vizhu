@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { authApi, useAuthStore } from '@/features/auth';
+import { useOnboardingStore } from '@/features/onboarding';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 import { RoundButton } from '@/shared/ui/RoundButton';
@@ -11,7 +12,7 @@ import { RoundButton } from '@/shared/ui/RoundButton';
 import './SmsCodePage.scss';
 
 const CODE_LENGTH = 4;
-const RESEND_SECONDS = 42;
+const RESEND_SECONDS = 60;
 
 const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
@@ -19,6 +20,7 @@ export const SmsCodePage = () => {
   const navigate = useNavigate();
   const phone = useAuthStore((s) => s.phone);
   const login = useAuthStore((s) => s.login);
+  const hasSeen = useOnboardingStore((s) => s.hasSeen);
 
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const [error, setError] = useState<string | null>(null);
@@ -103,7 +105,11 @@ export const SmsCodePage = () => {
     try {
       const { data } = await authApi.verifyCode(phone ?? '', code);
       login({ phone: data.user.phone, userName: data.user.name });
-      void navigate('/auth/welcome', { replace: true });
+      if (data.user.is_new) {
+        void navigate('/auth/welcome', { replace: true });
+      } else {
+        void navigate(hasSeen ? '/' : '/onboarding', { replace: true });
+      }
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const errorCode = err.response?.data?.error;

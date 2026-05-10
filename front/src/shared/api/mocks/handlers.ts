@@ -259,14 +259,17 @@ export const handlers = [
       );
     }
 
+    // Номер оканчивается на "00" → существующий пользователь (для тестирования)
+    const isNew = !phone.endsWith('00');
+
     return HttpResponse.json({
       access_token: 'mock-access-token',
       refresh_token: 'mock-refresh-token',
       user: {
         id: 'mock-user-id',
-        name: 'Светлана',
+        name: isNew ? 'Светлана' : 'Иван',
         phone,
-        is_new: true,
+        is_new: isNew,
       },
     });
   }),

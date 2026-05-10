@@ -28,6 +28,7 @@
   &__desc {
     @include m.text-16;
 
+    margin-bottom: 0;
     color: var(--color-text-muted);
   }
 
