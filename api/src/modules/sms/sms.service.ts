@@ -22,7 +22,7 @@ export class SmsService {
 
   async sendOtp(phone: string, code: string): Promise<void> {
     const spokenCode = code.split('').join(', '); // "1, 2, 3, 4" — пауза между цифрами
-    const message = `Ваш код подтверждения ВИЖУ: ${spokenCode}. Повторяю: ${spokenCode}.`;
+    const message = `Добро пожаловать в сервис ВИЖУ! Ваш код подтверждения: ${spokenCode}. Повторяю: ${spokenCode}.`;
 
     try {
       const response = await axios.get<SmscResponse>(this.apiUrl, {
