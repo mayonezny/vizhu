@@ -143,12 +143,15 @@
   &__result {
     position: relative;
     z-index: 2;
+    max-height: 55dvh;
     padding: var(--pad-4);
     margin: 0 var(--pad-4);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background: #fff;
     border-radius: var(--radius-lg);
     transition: opacity 150ms ease, transform 150ms ease;
-    touch-action: none;
+    touch-action: pan-y;
     user-select: none;
 
     &--held {

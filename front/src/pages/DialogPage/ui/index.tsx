@@ -56,6 +56,7 @@ export const DialogPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const countdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const describeMutation = useDescribeMutation();
   const ocrMutation = useOcrMutation();
@@ -324,14 +325,22 @@ export const DialogPage = () => {
   );
 
   const handleBubblePointerDown = useCallback(() => {
-    setIsBubbleHeld(true);
     const release = () => {
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
+        holdTimerRef.current = null;
+      }
       setIsBubbleHeld(false);
       document.removeEventListener('pointerup', release);
       document.removeEventListener('pointercancel', release);
     };
     document.addEventListener('pointerup', release);
     document.addEventListener('pointercancel', release);
+
+    holdTimerRef.current = setTimeout(() => {
+      holdTimerRef.current = null;
+      setIsBubbleHeld(true);
+    }, 900);
   }, []);
 
   const handleRetake = () => {
