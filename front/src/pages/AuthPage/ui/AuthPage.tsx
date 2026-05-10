@@ -15,7 +15,7 @@ export const AuthPage = () => {
   const hasSeen = useOnboardingStore((s) => s.hasSeen);
 
   const handleDemoMode = () => {
-    login();
+    login('');
     void navigate(hasSeen ? '/' : '/onboarding', { replace: true });
   };
 

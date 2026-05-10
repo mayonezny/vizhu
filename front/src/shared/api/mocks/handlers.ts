@@ -230,49 +230,38 @@ const MOCK_HISTORY: HistoryEntry[] = [
 
 export const handlers = [
   // ─── Auth ──────────────────────────────────────────────────────────────────
-  // Запрос кода: любой номер → успех через ~600 мс
-  http.post('*/auth/request-code', async () => {
+  // Запрос OTP: любой номер → успех ~600 мс
+  http.post('*/auth/send-otp', async () => {
     await new Promise((r) => setTimeout(r, 600));
-    return HttpResponse.json({ ok: true, expires_in: 300 });
+    return HttpResponse.json({ message: 'Звонок инициирован' });
   }),
 
-  // Верификация кода:
-  //   0000 → неверный код (400)
-  //   9999 → код устарел (410)
-  //   любой другой 4-значный → успех
-  http.post('*/auth/verify-code', async ({ request }) => {
+  // Верификация OTP:
+  //   0000 → неверный/истёкший код (400)
+  //   номер оканчивается на "00" → существующий пользователь
+  //   иначе → новый пользователь
+  http.post('*/auth/verify-otp', async ({ request }) => {
     await new Promise((r) => setTimeout(r, 800));
 
     const { phone, code } = (await request.json()) as { phone: string; code: string };
 
     if (code === '0000') {
       return HttpResponse.json(
-        { error: 'invalid_code', message: 'Неверный код. Проверьте и попробуйте снова.' },
+        { error: 'invalid_code', message: 'Неверный или истёкший код.' },
         { status: 400 },
       );
     }
 
-    if (code === '9999') {
-      return HttpResponse.json(
-        { error: 'code_expired', message: 'Код устарел. Запросите новый.' },
-        { status: 410 },
-      );
-    }
-
-    // Номер оканчивается на "00" → существующий пользователь (для тестирования)
-    const isNew = !phone.endsWith('00');
-
-    return HttpResponse.json({
-      access_token: 'mock-access-token',
-      refresh_token: 'mock-refresh-token',
-      user: {
-        id: 'mock-user-id',
-        name: isNew ? 'Светлана' : 'Иван',
-        phone,
-        is_new: isNew,
-      },
-    });
+    const isNewUser = !phone.endsWith('00');
+    return HttpResponse.json({ accessToken: 'mock-access-token', isNewUser });
   }),
+
+  http.post('*/auth/refresh', async () => {
+    await new Promise((r) => setTimeout(r, 300));
+    return HttpResponse.json({ accessToken: 'mock-access-token-refreshed' });
+  }),
+
+  http.post('*/auth/logout', () => new HttpResponse(null, { status: 200 })),
 
   // ─── AI ────────────────────────────────────────────────────────────────────
   http.post('*/ai/stt', async () => {
@@ -314,9 +303,18 @@ export const handlers = [
     });
   }),
 
-  http.post('*/registration', async () => {
+  http.get('*/blindness-types', () =>
+    HttpResponse.json([
+      { id: 1, name: 'Незрячий' },
+      { id: 2, name: 'Плохое зрение' },
+      { id: 3, name: 'Помогаю близкому' },
+      { id: 4, name: 'Другое' },
+    ]),
+  ),
+
+  http.post('*/profile', async () => {
     await new Promise((r) => setTimeout(r, 700));
-    return HttpResponse.json({ ok: true });
+    return new HttpResponse(null, { status: 201 });
   }),
 
   http.get('*/history', () => HttpResponse.json(MOCK_HISTORY)),

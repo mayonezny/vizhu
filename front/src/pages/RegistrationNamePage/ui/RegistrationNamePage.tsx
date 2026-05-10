@@ -17,8 +17,11 @@ const schema = z.object({
   name: z.string().min(1, 'Введите имя'),
   age: z
     .string()
-    .min(1, 'Введите возраст')
+    .optional()
     .refine((v) => {
+      if (!v) {
+        return true;
+      }
       const n = parseInt(v, 10);
       return !isNaN(n) && n >= 1 && n <= 120;
     }, 'Введите корректный возраст (1–120)'),
@@ -45,7 +48,7 @@ export const RegistrationNamePage = () => {
 
   const onSubmit = (data: FormValues) => {
     setName(data.name);
-    setAge(data.age);
+    setAge(data.age ?? '');
     void navigate('/registration/vision');
   };
 
@@ -88,7 +91,7 @@ export const RegistrationNamePage = () => {
 
         <Input
           {...register('age')}
-          label="Возраст"
+          label="Возраст (необязательно)"
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"

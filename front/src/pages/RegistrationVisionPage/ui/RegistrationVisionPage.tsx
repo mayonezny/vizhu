@@ -1,8 +1,8 @@
 import { ChevronLeft } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { useRegistrationStore, type VisionType } from '@/features/registration';
+import { registrationApi, useRegistrationStore, type BlindnessType } from '@/features/registration';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 import { RadioCardGroup, type RadioCardOption } from '@/shared/ui/RadioCardGroup';
@@ -10,30 +10,37 @@ import { RoundButton } from '@/shared/ui/RoundButton';
 
 import './RegistrationVisionPage.scss';
 
-const OPTIONS: RadioCardOption<VisionType>[] = [
-  { value: 'blind', label: 'Незрячий', subtitle: 'Полная озвучка, экран затемнён' },
-  {
-    value: 'low_vision',
-    label: 'Плохое зрение',
-    subtitle: 'Очень крупный шрифт, высокий контраст',
-  },
-  { value: 'helper', label: 'Помогаю близкому', subtitle: 'Стандартный интерфейс, AI-помощь' },
-  { value: 'exploring', label: 'Другое', subtitle: 'Режим без подстроек' },
-];
-
 export const RegistrationVisionPage = () => {
   const navigate = useNavigate();
-  const visionType = useRegistrationStore((s) => s.visionType);
-  const setVisionType = useRegistrationStore((s) => s.setVisionType);
+  const blindnessTypeId = useRegistrationStore((s) => s.blindnessTypeId);
+  const setBlindnessTypeId = useRegistrationStore((s) => s.setBlindnessTypeId);
+
+  const [options, setOptions] = useState<RadioCardOption<string>[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    announceRouteChange('Шаг 3 из 4. Выберите, какое у вас зрение');
+    announceRouteChange('Шаг 2 из 4. Выберите, какое у вас зрение');
   }, []);
 
+  useEffect(() => {
+    registrationApi
+      .getBlindnessTypes()
+      .then(({ data }) => {
+        setOptions(data.map((t: BlindnessType) => ({ value: String(t.id), label: t.name })));
+      })
+      .catch(() => {
+        // Keep empty — user can retry or skip
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const selectedValue = blindnessTypeId !== null ? String(blindnessTypeId) : null;
+
+  const handleChange = (value: string) => {
+    setBlindnessTypeId(Number(value));
+  };
+
   const handleNext = () => {
-    if (!visionType) {
-      return;
-    }
     void navigate('/registration/ipra');
   };
 
@@ -57,15 +64,21 @@ export const RegistrationVisionPage = () => {
         </p>
       </div>
 
-      <RadioCardGroup
-        name="visionType"
-        options={OPTIONS}
-        value={visionType}
-        onChange={setVisionType}
-        className="reg-vision__options"
-      />
+      {isLoading ? (
+        <p className="reg-vision__loading" aria-live="polite">
+          Загружаем варианты...
+        </p>
+      ) : (
+        <RadioCardGroup
+          name="blindnessType"
+          options={options}
+          value={selectedValue}
+          onChange={handleChange}
+          className="reg-vision__options"
+        />
+      )}
 
-      <Button onClick={handleNext} disabled={!visionType} aria-label="Перейти к следующему шагу">
+      <Button onClick={handleNext} aria-label="Перейти к следующему шагу">
         Дальше
       </Button>
     </main>

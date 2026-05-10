@@ -1,14 +1,12 @@
 import { api } from '@/shared/api';
 
-export type VerifyCodeResponse = {
-  access_token: string;
-  refresh_token: string;
-  user: {
-    id: string;
-    name: string;
-    phone: string;
-    is_new: boolean;
-  };
+export type VerifyOtpResponse = {
+  accessToken: string;
+  isNewUser: boolean;
+};
+
+export type RefreshResponse = {
+  accessToken: string;
 };
 
 export type AuthErrorCode = 'invalid_code' | 'code_expired' | 'too_many_requests';
@@ -19,9 +17,12 @@ export type AuthErrorResponse = {
 };
 
 export const authApi = {
-  requestCode: (phone: string) =>
-    api.post<{ ok: true; expires_in: number }>('/auth/request-code', { phone }),
+  sendOtp: (phone: string) => api.post<{ message: string }>('/auth/send-otp', { phone }),
 
-  verifyCode: (phone: string, code: string) =>
-    api.post<VerifyCodeResponse>('/auth/verify-code', { phone, code }),
+  verifyOtp: (phone: string, code: string) =>
+    api.post<VerifyOtpResponse>('/auth/verify-otp', { phone, code }),
+
+  refresh: () => api.post<RefreshResponse>('/auth/refresh'),
+
+  logout: () => api.post<void>('/auth/logout'),
 };

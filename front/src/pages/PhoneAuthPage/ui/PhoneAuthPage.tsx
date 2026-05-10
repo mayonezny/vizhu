@@ -49,13 +49,15 @@ export const PhoneAuthPage = () => {
     const digits = data.phone.replace(/\D/g, '');
     const normalized =
       digits.length === 10
-        ? `+7${digits}`
+        ? `7${digits}`
         : digits.startsWith('8')
-          ? `+7${digits.slice(1)}`
-          : `+${digits}`;
+          ? `7${digits.slice(1)}`
+          : digits.startsWith('+7')
+            ? digits.slice(1)
+            : digits;
 
     try {
-      await authApi.requestCode(normalized);
+      await authApi.sendOtp(normalized);
       setPhone(normalized);
       void navigate('/auth/code');
     } catch (err) {

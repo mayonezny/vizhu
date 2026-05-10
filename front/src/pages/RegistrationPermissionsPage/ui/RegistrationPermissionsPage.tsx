@@ -76,7 +76,7 @@ const requestPermissions = async (perms: Record<PermKey, boolean>) => {
 
 export const RegistrationPermissionsPage = () => {
   const navigate = useNavigate();
-  const { name, age, visionType, ipraVerified, reset } = useRegistrationStore();
+  const { name, age, blindnessTypeId, reset } = useRegistrationStore();
   const [enabled, setEnabled] = useState<Record<PermKey, boolean>>({
     camera: true,
     microphone: true,
@@ -97,11 +97,11 @@ export const RegistrationPermissionsPage = () => {
     setIsLoading(true);
     try {
       await requestPermissions(enabled);
-      await registrationApi.register({
+      const parsedAge = age ? parseInt(age, 10) : undefined;
+      await registrationApi.createProfile({
         name,
-        age: parseInt(age, 10),
-        vision_type: visionType ?? 'exploring',
-        ipra_verified: ipraVerified,
+        ...(parsedAge !== undefined && !isNaN(parsedAge) && { age: parsedAge }),
+        ...(blindnessTypeId !== null && { blindnessTypeId }),
       });
       reset();
       void navigate('/registration/welcome', { replace: true });

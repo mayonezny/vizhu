@@ -1,20 +1,16 @@
 import { STORAGE_KEYS } from '@/shared/config/storage-keys';
 import { createPersistedStore } from '@/shared/lib/zustand';
 
-export type VisionType = 'blind' | 'low_vision' | 'helper' | 'exploring';
-
 interface RegistrationState {
   name: string;
   age: string;
-  visionType: VisionType | null;
-  ipraVerified: boolean;
+  blindnessTypeId: number | null;
 }
 
 interface RegistrationActions {
   setName: (name: string) => void;
   setAge: (age: string) => void;
-  setVisionType: (type: VisionType) => void;
-  setIpraVerified: (verified: boolean) => void;
+  setBlindnessTypeId: (id: number) => void;
   reset: () => void;
 }
 
@@ -25,8 +21,7 @@ export const useRegistrationStore = createPersistedStore<RegistrationStore>(
   (set) => ({
     name: '',
     age: '',
-    visionType: null,
-    ipraVerified: false,
+    blindnessTypeId: null,
     setName: (name) =>
       set((draft) => {
         draft.name = name;
@@ -35,20 +30,15 @@ export const useRegistrationStore = createPersistedStore<RegistrationStore>(
       set((draft) => {
         draft.age = age;
       }),
-    setVisionType: (type) =>
+    setBlindnessTypeId: (id) =>
       set((draft) => {
-        draft.visionType = type;
-      }),
-    setIpraVerified: (verified) =>
-      set((draft) => {
-        draft.ipraVerified = verified;
+        draft.blindnessTypeId = id;
       }),
     reset: () =>
       set((draft) => {
         draft.name = '';
         draft.age = '';
-        draft.visionType = null;
-        draft.ipraVerified = false;
+        draft.blindnessTypeId = null;
       }),
   }),
   { name: STORAGE_KEYS.REGISTRATION },

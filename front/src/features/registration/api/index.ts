@@ -1,14 +1,18 @@
 import { api } from '@/shared/api';
 
-import type { VisionType } from '../model/registration.store';
-
-export type RegistrationPayload = {
+export type BlindnessType = {
+  id: number;
   name: string;
-  age: number;
-  vision_type: VisionType;
-  ipra_verified: boolean;
+};
+
+export type ProfilePayload = {
+  name: string;
+  age?: number;
+  blindnessTypeId?: number;
 };
 
 export const registrationApi = {
-  register: (payload: RegistrationPayload) => api.post<{ ok: true }>('/registration', payload),
+  getBlindnessTypes: () => api.get<BlindnessType[]>('/blindness-types'),
+
+  createProfile: (payload: ProfilePayload) => api.post<void>('/profile', payload),
 };

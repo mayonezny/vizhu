@@ -105,21 +105,21 @@ export const CallCodePage = () => {
     setError(null);
 
     try {
-      const { data } = await authApi.verifyCode(phone ?? '', code);
-      login({ phone: data.user.phone, userName: data.user.name });
-      if (data.user.is_new) {
+      const { data } = await authApi.verifyOtp(phone ?? '', code);
+      login(data.accessToken);
+      if (data.isNewUser) {
         void navigate('/registration/name', { replace: true });
       } else {
         void navigate(hasSeen ? '/' : '/onboarding', { replace: true });
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        const errorCode = err.response?.data?.error;
-        if (errorCode === 'code_expired') {
-          setError('Код устарел. Нажмите «Позвонить ещё раз».');
+        const status = err.response?.status;
+        if (status === 400) {
+          setError('Неверный или истёкший код. Проверьте и попробуйте снова.');
           setSecondsLeft(0);
         } else {
-          setError('Неверный код. Проверьте и попробуйте снова.');
+          setError('Не удалось проверить код. Попробуйте позже.');
         }
       } else {
         setError('Не удалось проверить код. Попробуйте позже.');
@@ -135,7 +135,7 @@ export const CallCodePage = () => {
       return;
     }
     try {
-      await authApi.requestCode(phone);
+      await authApi.sendOtp(phone);
       setSecondsLeft(RESEND_SECONDS);
       setDigits(Array(CODE_LENGTH).fill(''));
       setError(null);
@@ -147,7 +147,7 @@ export const CallCodePage = () => {
   };
 
   const maskedPhone = phone
-    ? phone.replace(/(\+7)(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3-$4-$5')
+    ? phone.replace(/^(7)(\d{3})(\d{3})(\d{2})(\d{2})$/, '+$1 $2 $3-$4-$5')
     : 'ваш номер';
 
   return (
