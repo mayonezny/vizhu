@@ -99,21 +99,24 @@ export const DialogPage = () => {
           videoRef.current.srcObject = stream;
         }
 
-        // Включаем непрерывный автофокус, если камера поддерживает
+        // Автофокус, баланс белого, экспозиция + компенсация зума ультраширокого объектива
         const track = stream.getVideoTracks()[0];
         if (track) {
           type ExtConstraints = MediaTrackConstraintSet & {
             focusMode?: string;
             whiteBalanceMode?: string;
             exposureMode?: string;
+            zoom?: number;
           };
           type ExtCapabilities = MediaTrackCapabilities & {
             focusMode?: string[];
             whiteBalanceMode?: string[];
             exposureMode?: string[];
+            zoom?: { min: number; max: number; step: number };
           };
           const caps = track.getCapabilities() as ExtCapabilities;
           const advanced: ExtConstraints[] = [];
+
           if (caps.focusMode?.includes('continuous')) {
             advanced.push({ focusMode: 'continuous' });
           }
@@ -123,6 +126,13 @@ export const DialogPage = () => {
           if (caps.exposureMode?.includes('continuous')) {
             advanced.push({ exposureMode: 'continuous' });
           }
+          // getUserMedia на Android часто выбирает ультраширокий объектив (0.6x).
+          // Зум ~2x приближает картинку к основному объективу (1x в нативной камере).
+          if (caps.zoom) {
+            const targetZoom = Math.min(2, caps.zoom.max);
+            advanced.push({ zoom: targetZoom });
+          }
+
           if (advanced.length > 0) {
             await track
               .applyConstraints({ advanced: advanced as MediaTrackConstraintSet[] })
