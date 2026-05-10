@@ -21,7 +21,8 @@ export class SmsService {
   constructor(private config: ConfigService) {}
 
   async sendOtp(phone: string, code: string): Promise<void> {
-    const message = `Ваш код подтверждения ВИЖУ: ${code}. Действует 5 минут.`;
+    const spokenCode = code.split('').join(', '); // "1, 2, 3, 4" — пауза между цифрами
+    const message = `Ваш код подтверждения ВИЖУ: ${spokenCode}. Повторяю: ${spokenCode}.`;
 
     try {
       const response = await axios.get<SmscResponse>(this.apiUrl, {
@@ -29,6 +30,8 @@ export class SmsService {
           apikey: this.config.get<string>('SMSC_API_KEY'),
           phones: phone,
           mes: message,
+          call: 1,
+          voice: 'w', // женский голос
           charset: 'utf-8',
           fmt: 3, // ответ в JSON
         },
