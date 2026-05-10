@@ -233,32 +233,60 @@ export const DialogPage = () => {
   );
 
   const doCapture = useCallback(async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
     const video = videoRef.current;
-    if (!video || video.videoWidth === 0) {
+    if (!track || !video || video.videoWidth === 0) {
       return;
     }
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      return;
+
+    // Попытка залочить фокус перед снимком
+    type ExtConstraints = MediaTrackConstraintSet & { focusMode?: string };
+    type ExtCapabilities = MediaTrackCapabilities & { focusMode?: string[] };
+    const caps = track.getCapabilities() as ExtCapabilities;
+    if (caps.focusMode?.includes('single-shot')) {
+      await track
+        .applyConstraints({ advanced: [{ focusMode: 'single-shot' } as ExtConstraints] })
+        .catch(() => {});
+      // Samsung Browser / Chrome на Android — фокус-лок занимает до 600–800ms
+      await new Promise<void>((r) => setTimeout(r, 700));
     }
-    ctx.drawImage(video, 0, 0);
+
+    let blob: Blob | null = null;
+
+    // ImageCapture — аппаратный затвор, нативное разрешение (Chrome / Android)
+    if ('ImageCapture' in window) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ic = new (window as any).ImageCapture(track);
+        blob = (await ic.takePhoto()) as Blob;
+      } catch {
+        // fallback ниже
+      }
+    }
+
+    // Fallback: читаем текущий кадр через canvas
+    if (!blob) {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return;
+      }
+      ctx.drawImage(video, 0, 0);
+      blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.92));
+    }
+
+    track.stop();
     streamRef.current?.getTracks().forEach((t) => t.stop());
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          return;
-        }
-        const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
-        const url = URL.createObjectURL(file);
-        setPhotoUrl(url);
-        void runAnalysis(file);
-      },
-      'image/jpeg',
-      0.9,
-    );
+
+    if (!blob) {
+      return;
+    }
+    const file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' });
+    const url = URL.createObjectURL(file);
+    setPhotoUrl(url);
+    void runAnalysis(file);
   }, [runAnalysis]);
 
   const handleGalleryPick = useCallback(

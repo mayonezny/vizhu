@@ -8,12 +8,16 @@ import multipart from '@fastify/multipart';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  const BODY_LIMIT = 20 * 1024 * 1024; // 20 МБ
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({ bodyLimit: BODY_LIMIT }),
   );
 
-  await app.register(multipart);
+  await app.register(multipart, {
+    limits: { fileSize: BODY_LIMIT },
+  });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
