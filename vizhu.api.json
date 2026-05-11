@@ -1,0 +1,189 @@
+
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ВИЖУ API",
+    "description": "API для сервиса помощи незрячим пользователям",
+    "version": "1.0"
+  },
+  "servers": [
+    { "url": "https://vizhu.su/api", "description": "Production" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "cookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "refresh_token"
+      }
+    }
+  },
+  "paths": {
+    "/auth/send-otp": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Запросить голосовой OTP-звонок",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "example": "79001234567",
+                    "description": "Принимается любой формат: 79001234567, +7(900)123-45-67, 8-900-123-45-67"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Звонок инициирован" },
+          "400": { "description": "Неверный формат номера" }
+        }
+      }
+    },
+    "/auth/verify-otp": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Подтвердить код. Возвращает accessToken + ставит refresh cookie",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "example": "79001234567" },
+                  "code": { "type": "string", "example": "1234", "description": "4-значный код из звонка" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешная аутентификация",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": { "type": "string" },
+                    "isNewUser": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Неверный или истёкший код" }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Обновить accessToken по refresh cookie",
+        "security": [{ "cookie": [] }],
+        "responses": {
+          "200": {
+            "description": "Новый accessToken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Refresh token недействителен" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Выход — инвалидирует refresh token",
+        "security": [{ "cookie": [] }],
+        "responses": {
+          "200": { "description": "Выход выполнен" }
+        }
+      }
+    },
+    "/profile": {
+      "post": {
+        "tags": ["profile"],
+        "summary": "Заполнить профиль (шаг после первого входа)",
+        "security": [{ "bearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "example": "Иван", "minLength": 2 },
+                  "age": { "type": "integer", "example": 25, "minimum": 0 },
+                  "blindnessTypeId": { "type": "integer", "example": 1, "description": "ID из /blindness-types" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Профиль создан" },
+          "400": { "description": "Невалидные данные" },
+          "401": { "description": "Нет токена" },
+          "409": { "description": "Профиль уже существует" }
+        }
+      },
+      "get": {
+        "tags": ["profile"],
+        "summary": "Профиль текущего пользователя",
+        "security": [{ "bearer": [] }],
+        "responses": {
+          "200": { "description": "Профиль пользователя" },
+          "401": { "description": "Нет токена" },
+          "404": { "description": "Профиль не найден" }
+        }
+      }
+    },
+    "/blindness-types": {
+      "get": {
+        "tags": ["blindness-types"],
+        "summary": "Список типов слепоты для выбора при регистрации",
+        "responses": {
+          "200": {
+            "description": "Список типов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "name": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -37,6 +37,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document);
 
+  // Fallback: plain JSON без зависимости от статики
+  app.getHttpAdapter().get('/openapi.json', (_req: unknown, res: unknown) => {
+    (res as { send: (d: unknown) => void }).send(document);
+  });
+
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
   console.log(`API запущен на порту ${process.env.PORT ?? 3000}`);
 }
