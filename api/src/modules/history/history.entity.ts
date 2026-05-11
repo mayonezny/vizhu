@@ -18,7 +18,7 @@ export class HistoryEntry {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'phone_account_id', nullable: true })
+  @Column({ name: 'phone_account_id', type: 'varchar', nullable: true })
   phoneAccountId!: string | null;
 
   @Column({ type: 'enum', enum: ['describe', 'currency', 'ocr', 'volunteer'] })
