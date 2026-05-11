@@ -31,6 +31,7 @@
   --color-bg: var(--white);
   --color-surface: var(--gray-25);
   --color-surface-2: var(--gray-50);
+  --color-surface-3: #eaecf7;
   --color-text: var(--gray-900);
   --color-text-muted: var(--gray-600);
   --color-border: var(--gray-200);
@@ -82,6 +83,7 @@
   --color-bg: var(--black);
   --color-surface: #0f141b;
   --color-surface-2: #121922;
+  --color-surface-3: #18212c;
   --color-text: #f1f5f9;
   --color-text-muted: #94a3b8;
   --color-border: #1e293b;
@@ -146,8 +148,6 @@ svg {
 
 :focus-visible {
   outline: none;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 var(--focus-ring) var(--color-focus);
 }
 
 .visually-hidden {

@@ -1,0 +1,135 @@
+@use 'shared/styles/_mixins' as m;
+
+.history-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding: 0 var(--pad-4);
+  overflow: hidden;
+  background: var(--color-bg);
+
+  &__header {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--pad-3) 0;
+    color: var(--color-primary);
+  }
+
+  &__title {
+    @include m.text-24;
+
+    flex: 1;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-text);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* ── "Озвучить весь диалог" — не скроллится ──────────────────────────── */
+
+  &__play-card {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-4);
+    align-items: center;
+    width: 100%;
+    padding: var(--pad-4) var(--pad-5);
+    margin-bottom: var(--space-4);
+    color: var(--color-bg);
+    cursor: pointer;
+    background: var(--color-primary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-lg);
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--color-primary-hover);
+    }
+
+    &:active {
+      filter: brightness(0.92);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 3px var(--color-bg),
+        0 0 0 6px var(--color-primary);
+    }
+  }
+
+  &__play-icon {
+    display: flex;
+    flex-shrink: 0;
+  }
+
+  &__play-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    align-items: flex-start;
+  }
+
+  &__play-title {
+    @include m.text-24;
+  }
+
+  &__play-duration {
+    @include m.text-14;
+
+    opacity: 0.85;
+  }
+
+  /* ── Скроллируемая область диалога ───────────────────────────────────── */
+
+  &__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-3);
+    overflow: hidden auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  &__loading {
+    @include m.text-16;
+
+    margin: auto;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  &__dialog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-bottom: var(--pad-4);
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  /* ── Кнопки действий ─────────────────────────────────────────────────── */
+
+  &__actions {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--pad-3) 0 var(--pad-5);
+  }
+}

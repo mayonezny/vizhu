@@ -1,0 +1,56 @@
+@use 'shared/styles/_mixins' as m;
+
+.dialog-bubble {
+  display: flex;
+  flex-direction: column;
+
+  &--user {
+    align-items: flex-end;
+    align-self: flex-end;
+    max-width: 75%;
+  }
+
+  &--assistant {
+    align-items: flex-start;
+    align-self: flex-start;
+  }
+
+  &__text {
+    @include m.text-16;
+
+    margin: 0;
+
+    .dialog-bubble--user & {
+      padding: var(--pad-3) var(--pad-4);
+      color: var(--color-text);
+      background: var(--color-surface-3);
+      border-radius: var(--radius-lg);
+      border-bottom-right-radius: var(--radius-xs);
+    }
+
+    .dialog-bubble--assistant & {
+      position: relative;
+      padding: var(--pad-1) 0 var(--pad-1) 20px;
+      color: var(--color-text);
+
+      &::before {
+        position: absolute;
+        top: calc(var(--pad-1) + 0.4em);
+        left: 0;
+        width: 8px;
+        height: 8px;
+        content: '';
+        background: var(--color-primary);
+        border-radius: 50%;
+      }
+    }
+  }
+
+  &__time {
+    @include m.text-12;
+
+    display: block;
+    margin-top: var(--space-1);
+    color: var(--color-text-muted);
+  }
+}

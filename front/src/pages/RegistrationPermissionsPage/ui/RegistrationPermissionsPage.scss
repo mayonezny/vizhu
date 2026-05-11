@@ -1,0 +1,130 @@
+@use 'shared/styles/_mixins' as m;
+
+.reg-perms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  height: 100dvh;
+  padding: var(--pad-4);
+  overflow: hidden;
+
+  &__back {
+    display: flex;
+    flex-shrink: 0;
+    padding-top: var(--space-3);
+  }
+
+  &__head {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__title {
+    @include m.text-32;
+
+    color: var(--color-text);
+  }
+
+  &__desc {
+    @include m.text-16;
+
+    margin-top: 0;
+    color: var(--color-text-muted);
+  }
+
+  &__list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    padding: var(--space-4);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-lg);
+  }
+
+  &__item-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--color-primary);
+    background: var(--color-primary-ghost, rgb(37 99 235 / 8%));
+    border-radius: var(--radius-md);
+  }
+
+  &__item-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+  }
+
+  &__item-label {
+    @include m.text-16;
+
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  &__item-desc {
+    @include m.text-12;
+
+    color: var(--color-text-muted);
+  }
+
+  &__toggle {
+    position: relative;
+    flex-shrink: 0;
+    width: 52px;
+    height: 30px;
+    padding: 0;
+    cursor: pointer;
+    background: var(--color-border, #d1d5db);
+    border: none;
+    border-radius: 15px;
+    transition: background 0.2s ease;
+
+    &:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 3px var(--color-bg),
+        0 0 0 6px var(--color-primary);
+    }
+
+    &--on {
+      background: var(--color-primary);
+
+      .reg-perms__toggle-thumb {
+        transform: translateX(22px);
+      }
+    }
+  }
+
+  &__toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 20%);
+    transition: transform 0.2s ease;
+  }
+}

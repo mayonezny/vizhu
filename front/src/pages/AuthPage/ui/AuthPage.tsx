@@ -15,12 +15,12 @@ export const AuthPage = () => {
   const hasSeen = useOnboardingStore((s) => s.hasSeen);
 
   const handleDemoMode = () => {
-    login();
+    login('');
     void navigate(hasSeen ? '/' : '/onboarding', { replace: true });
   };
 
   const handlePhoneAuth = () => {
-    announceRouteChange('Вход по номеру телефона — функция в разработке');
+    void navigate('/auth/phone');
   };
 
   const handleGosuslugiAuth = () => {
