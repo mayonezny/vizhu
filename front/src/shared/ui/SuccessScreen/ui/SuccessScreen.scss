@@ -1,0 +1,94 @@
+@use 'shared/styles/_mixins' as m;
+
+.success-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  padding: var(--pad-6);
+  color: #fff;
+  text-align: center;
+  background: var(--color-primary);
+
+  &__logo {
+    svg {
+      height: 72px;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__name {
+    @include m.text-12;
+
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    opacity: 0.75;
+  }
+
+  &__title {
+    @include m.text-32;
+
+    margin-bottom: 0;
+    color: #fff;
+  }
+
+  &__subtitle {
+    @include m.text-16;
+
+    opacity: 0.85;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    width: 100%;
+    padding-bottom: var(--space-1);
+    margin-top: var(--space-3);
+
+    .btn {
+      color: var(--color-primary);
+      background: #fff;
+      border-color: transparent;
+
+      &:hover:not(:disabled) {
+        background: var(--blue-100);
+      }
+
+      &:focus-visible {
+        box-shadow:
+          0 0 0 3px var(--color-primary),
+          0 0 0 6px #fff;
+      }
+    }
+  }
+
+  &__secondary-btn {
+    @include m.text-16;
+
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    opacity: 0.85;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 3px;
+      border-radius: 3px;
+    }
+  }
+}
