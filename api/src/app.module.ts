@@ -5,6 +5,7 @@ import { HttpModule } from '@nestjs/axios';
 import { AiModule } from './modules/ai/ai.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { HistoryModule } from './modules/history/history.module';
 import { HealthController } from './common/health.controller';
 
 @Module({
@@ -23,6 +24,7 @@ import { HealthController } from './common/health.controller';
     AiModule,
     AuthModule,
     UsersModule,
+    HistoryModule,
   ],
   controllers: [HealthController],
 })

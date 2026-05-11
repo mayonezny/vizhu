@@ -50,6 +50,6 @@ export class UsersService {
   }
 
   async getBlindnessTypes(): Promise<BlindnessType[]> {
-    return this.blindnessTypeRepo.find({ order: { name: 'ASC' } });
+    return this.blindnessTypeRepo.find({ order: { id: 'ASC' } });
   }
 }

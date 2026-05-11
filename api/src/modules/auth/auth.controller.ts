@@ -37,7 +37,7 @@ const COOKIE_OPTIONS: Record<string, unknown> = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict',
-  path: '/auth',
+  path: '/',
   maxAge: 30 * 24 * 60 * 60,
 };
 
@@ -135,7 +135,7 @@ export class AuthController {
   ) {
     const token = req.cookies?.[REFRESH_COOKIE];
     if (token) await this.auth.logout(token);
-    res.clearCookie(REFRESH_COOKIE, { path: '/auth' });
+    res.clearCookie(REFRESH_COOKIE, { path: '/' });
     return { message: 'Выход выполнен' };
   }
 }
