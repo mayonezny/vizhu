@@ -129,6 +129,9 @@ export const HistoryDetailPage = () => {
         <span className="history-detail__play-text">
           <span className="history-detail__play-title">Озвучить весь диалог</span>
           <span className="history-detail__play-duration">{duration}</span>
+          <span className="history-detail__play-subtitle" aria-hidden="true">
+            (Доступно только с включенным экранным диктором)
+          </span>
         </span>
       </button>
 

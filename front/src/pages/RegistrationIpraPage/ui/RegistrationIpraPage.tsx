@@ -2,6 +2,7 @@ import { Check, ChevronLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
+import { useToastStore } from '@/features/toast';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 import { RoundButton } from '@/shared/ui/RoundButton';
@@ -17,6 +18,7 @@ const BENEFITS = [
 
 export const RegistrationIpraPage = () => {
   const navigate = useNavigate();
+  const { showToast } = useToastStore();
 
   useEffect(() => {
     announceRouteChange('Шаг 3 из 4. Подтверждение ИПРА и получение Premium.');
@@ -24,6 +26,7 @@ export const RegistrationIpraPage = () => {
 
   const handleGosuslugi = () => {
     announceRouteChange('Вход через Госуслуги — функция в разработке');
+    showToast('Вход через Госуслуги — функция в разработке');
   };
 
   const handleSkip = () => {

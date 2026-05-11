@@ -147,17 +147,17 @@
     padding: var(--pad-4);
     margin: 0 var(--pad-4);
     overflow: auto;
-    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    user-select: none;
     background: #fff;
     border-radius: var(--radius-lg);
     transition: opacity 150ms ease, transform 150ms ease;
-    touch-action: pan-y;
-    user-select: none;
+    -webkit-overflow-scrolling: touch;
 
     &--held {
+      pointer-events: none;
       opacity: 0;
       transform: translateY(8px);
-      pointer-events: none;
     }
   }
 

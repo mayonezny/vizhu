@@ -59,6 +59,7 @@ export const RegistrationNamePage = () => {
           aria-label="Назад"
           icon={<ChevronLeft size={24} />}
           onClick={() => void navigate(-1)}
+          disabled
         />
       </div>
 

@@ -2,7 +2,7 @@ import { Phone, Play } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import { useAuthStore } from '@/features/auth';
-import { useOnboardingStore } from '@/features/onboarding';
+import { useToastStore } from '@/features/toast';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 import { Logo } from '@/shared/ui/Logo';
@@ -12,11 +12,11 @@ import './AuthPage.scss';
 export const AuthPage = () => {
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
-  const hasSeen = useOnboardingStore((s) => s.hasSeen);
+  const { showToast } = useToastStore();
 
   const handleDemoMode = () => {
     login('');
-    void navigate(hasSeen ? '/' : '/onboarding', { replace: true });
+    void navigate('/onboarding', { replace: true });
   };
 
   const handlePhoneAuth = () => {
@@ -25,6 +25,7 @@ export const AuthPage = () => {
 
   const handleGosuslugiAuth = () => {
     announceRouteChange('Вход через Госуслуги — функция в разработке');
+    showToast('Вход через Госуслуги — функция в разработке');
   };
 
   return (

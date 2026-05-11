@@ -1,10 +1,9 @@
 import axios from 'axios';
 import { ChevronLeft } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { authApi, useAuthStore } from '@/features/auth';
-import { useOnboardingStore } from '@/features/onboarding';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 import { RoundButton } from '@/shared/ui/RoundButton';
@@ -20,7 +19,6 @@ export const CallCodePage = () => {
   const navigate = useNavigate();
   const phone = useAuthStore((s) => s.phone);
   const login = useAuthStore((s) => s.login);
-  const hasSeen = useOnboardingStore((s) => s.hasSeen);
 
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +54,49 @@ export const CallCodePage = () => {
       refs.current[index + 1]?.focus();
     }
   };
+
+  const performVerification = useCallback(
+    async (code: string) => {
+      if (!phone) {
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const { data } = await authApi.verifyOtp(phone, code);
+        login(data.accessToken);
+        if (data.isNewUser) {
+          void navigate('/registration/name', { replace: true });
+        } else {
+          void navigate('/');
+        }
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          const status = err.response?.status;
+          if (status === 400) {
+            setError('Неверный или истёкший код. Проверьте и попробуйте снова.');
+            setSecondsLeft(0);
+          } else {
+            setError('Не удалось проверить код. Попробуйте позже.');
+          }
+        } else {
+          setError('Не удалось проверить код. Попробуйте позже.');
+        }
+        refs.current[0]?.focus();
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [phone, login, navigate],
+  );
+
+  useEffect(() => {
+    const code = digits.join('');
+    if (code.length === CODE_LENGTH && !isLoading) {
+      void performVerification(code);
+    }
+  }, [digits, isLoading, performVerification]);
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
@@ -100,34 +141,7 @@ export const CallCodePage = () => {
       refs.current[digits.findIndex((d) => !d)]?.focus();
       return;
     }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { data } = await authApi.verifyOtp(phone ?? '', code);
-      login(data.accessToken);
-      if (data.isNewUser) {
-        void navigate('/registration/name', { replace: true });
-      } else {
-        void navigate(hasSeen ? '/' : '/onboarding', { replace: true });
-      }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status;
-        if (status === 400) {
-          setError('Неверный или истёкший код. Проверьте и попробуйте снова.');
-          setSecondsLeft(0);
-        } else {
-          setError('Не удалось проверить код. Попробуйте позже.');
-        }
-      } else {
-        setError('Не удалось проверить код. Попробуйте позже.');
-      }
-      refs.current[0]?.focus();
-    } finally {
-      setIsLoading(false);
-    }
+    await performVerification(code);
   };
 
   const handleResend = async () => {

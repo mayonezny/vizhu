@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router';
 
+import { useToastStore } from '@/features/toast';
 import { announceRouteChange } from '@/shared/lib/a11y';
 import './root-layout.scss';
+import { Toast } from '@/shared/ui/Toast';
 
 /**
  * Корневая обёртка всего приложения. Не содержит UI — только инфраструктура доступности.
@@ -20,6 +22,7 @@ import './root-layout.scss';
 
 export const RootLayout = () => {
   const { pathname } = useLocation();
+  const { isOpen, message, duration, hideToast } = useToastStore();
 
   useEffect(() => {
     document.getElementById('main-content')?.focus();
@@ -41,6 +44,8 @@ export const RootLayout = () => {
         aria-atomic="true"
         className="visually-hidden"
       />
+
+      {isOpen && <Toast message={message} duration={duration} onClose={hideToast} />}
     </>
   );
 };

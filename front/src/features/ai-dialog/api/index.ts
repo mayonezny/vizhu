@@ -1,21 +1,45 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { historyKeys } from '@/entities/history';
 import { aiApi } from '@/shared/api';
 
-export const useDescribeMutation = () =>
-  useMutation({ mutationFn: (imageFile: File) => aiApi.describe(imageFile, 'detailed') });
+const useInvalidateHistory = () => {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: historyKeys.list() });
+};
 
-export const useOcrMutation = () =>
-  useMutation({ mutationFn: (imageFile: File) => aiApi.ocr(imageFile) });
+export const useDescribeMutation = () => {
+  const invalidate = useInvalidateHistory();
+  return useMutation({
+    mutationFn: (imageFile: File) => aiApi.describe(imageFile, 'detailed'),
+    onSuccess: invalidate,
+  });
+};
 
-export const useCurrencyMutation = () =>
-  useMutation({ mutationFn: (imageFile: File) => aiApi.currency(imageFile) });
+export const useOcrMutation = () => {
+  const invalidate = useInvalidateHistory();
+  return useMutation({
+    mutationFn: (imageFile: File) => aiApi.ocr(imageFile),
+    onSuccess: invalidate,
+  });
+};
 
-export const useChatMutation = () =>
-  useMutation({
+export const useCurrencyMutation = () => {
+  const invalidate = useInvalidateHistory();
+  return useMutation({
+    mutationFn: (imageFile: File) => aiApi.currency(imageFile),
+    onSuccess: invalidate,
+  });
+};
+
+export const useChatMutation = () => {
+  const invalidate = useInvalidateHistory();
+  return useMutation({
     mutationFn: ({ text, context }: { text: string; context?: string }) =>
       aiApi.chat(text, context),
+    onSuccess: invalidate,
   });
+};
 
 export const useSttMutation = () =>
   useMutation({

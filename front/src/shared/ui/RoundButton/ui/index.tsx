@@ -9,6 +9,7 @@ type RoundButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
   AriaLabel & {
     icon: ReactNode;
     variant?: 'base' | 'filled';
+    disabled?: boolean;
   };
 
 export const RoundButton = ({
@@ -16,18 +17,26 @@ export const RoundButton = ({
   variant = 'base',
   className,
   type = 'button',
+  disabled = false,
   ...props
 }: RoundButtonProps) => {
   const buttonClassName = [
     'round-button',
     variant === 'filled' && 'round-button--filled',
+    disabled && 'round-button--disabled',
     className,
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <button type={type} className={buttonClassName} {...props}>
+    <button
+      type={type}
+      className={buttonClassName}
+      disabled={disabled}
+      aria-disabled={disabled}
+      {...props}
+    >
       <span aria-hidden="true">{icon}</span>
     </button>
   );

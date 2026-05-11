@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { useAuthStore } from '@/features/auth';
-import { useOnboardingStore } from '@/features/onboarding';
 import { useSwipe } from '@/shared/lib/use-swipe';
 import { Button } from '@/shared/ui/Button';
 
@@ -13,8 +12,6 @@ import './OnboardingPage.scss';
 export const OnboardingPage = () => {
   const navigate = useNavigate();
   const isAuthed = useAuthStore((s) => s.isAuthed);
-  const hasSeen = useOnboardingStore((s) => s.hasSeen);
-  const markSeen = useOnboardingStore((s) => s.markSeen);
 
   const [current, setCurrent] = useState(0);
   const [animDir, setAnimDir] = useState<'next' | 'prev' | null>(null);
@@ -24,10 +21,8 @@ export const OnboardingPage = () => {
   useEffect(() => {
     if (!isAuthed) {
       void navigate('/auth', { replace: true });
-    } else if (hasSeen) {
-      void navigate('/', { replace: true });
     }
-  }, [isAuthed, hasSeen, navigate]);
+  }, [isAuthed, navigate]);
 
   // cleanup animation timer on unmount
   useEffect(() => () => clearTimeout(timerRef.current), []);
@@ -67,7 +62,6 @@ export const OnboardingPage = () => {
     if (current < slides.length - 1) {
       goTo(current + 1);
     } else {
-      markSeen();
       void navigate('/');
     }
   };

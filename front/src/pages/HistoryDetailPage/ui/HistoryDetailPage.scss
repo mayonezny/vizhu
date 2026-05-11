@@ -81,8 +81,12 @@
 
   &__play-duration {
     @include m.text-14;
+  }
 
-    opacity: 0.85;
+  &__play-subtitle {
+    @include m.text-12;
+
+    opacity: 0.75;
   }
 
   /* ── Скроллируемая область диалога ───────────────────────────────────── */

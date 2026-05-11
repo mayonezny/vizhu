@@ -1,7 +1,6 @@
 import { createBrowserRouter, redirect } from 'react-router';
 
 import { useAuthStore } from '@/features/auth';
-import { useOnboardingStore } from '@/features/onboarding';
 import { AuthPage } from '@/pages/AuthPage';
 import { CallCodePage } from '@/pages/CallCodePage';
 import { DialogPage } from '@/pages/DialogPage';
@@ -21,19 +20,8 @@ import { PageLayout } from '@/widgets/PageLayout';
 import { RootLayout } from '@/widgets/RootLayout';
 
 const isAuthed = () => useAuthStore.getState().isAuthed;
-const hasSeenOnboarding = () => useOnboardingStore.getState().hasSeen;
 
 const requireAuth = () => {
-  if (!isAuthed()) {
-    return redirect('/auth');
-  }
-  if (!hasSeenOnboarding()) {
-    return redirect('/onboarding');
-  }
-  return null;
-};
-
-const requireAuthOnly = () => {
   if (!isAuthed()) {
     return redirect('/auth');
   }
@@ -76,7 +64,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'registration',
-        loader: requireAuthOnly,
+        loader: requireAuth,
         children: [
           { path: 'name', element: <RegistrationNamePage /> },
           { path: 'vision', element: <RegistrationVisionPage /> },
