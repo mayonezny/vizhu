@@ -1,0 +1,46 @@
+@use 'shared/styles/_mixins' as m;
+
+.search-bar {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--pad-3) var(--pad-4);
+  background: var(--color-surface-3);
+  border-radius: 999px;
+  transition: border-color 0.15s ease;
+
+  &:focus-within {
+    border-color: var(--color-primary);
+  }
+
+  &__icon {
+    display: flex;
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+  }
+
+  &__input {
+    @include m.text-16;
+
+    flex: 1;
+    min-width: 0;
+    color: var(--color-text);
+    appearance: none;
+    outline: none;
+    background: none;
+    border: none;
+
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+
+  &__mic {
+    flex-shrink: 0;
+    color: var(--color-bg);
+  }
+}

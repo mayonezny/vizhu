@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import multipart from '@fastify/multipart';
+import fastifyCookie from '@fastify/cookie';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -19,11 +20,27 @@ async function bootstrap() {
     limits: { fileSize: BODY_LIMIT },
   });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  await app.register(fastifyCookie);
 
   if (process.env.NODE_ENV === 'development') {
     app.enableCors({ origin: 'http://localhost:5173' });
   }
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('ВИЖУ API')
+    .setDescription('API для сервиса помощи незрячим пользователям')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .addCookieAuth('refresh_token')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, document);
+
+  // Fallback: plain JSON без зависимости от статики
+  app.getHttpAdapter().get('/openapi.json', (_req: unknown, res: unknown) => {
+    (res as { send: (d: unknown) => void }).send(document);
+  });
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
   console.log(`API запущен на порту ${process.env.PORT ?? 3000}`);

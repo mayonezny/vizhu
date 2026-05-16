@@ -1,28 +1,42 @@
-// import { Injectable } from '@nestjs/common';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { Repository } from 'typeorm';
-// import { HistoryEntry, RequestType } from './history.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { HistoryEntry, HistoryMessage, RequestType } from './history.entity';
 
-// @Injectable()
-// export class HistoryService {
-//   constructor(
-//     @InjectRepository(HistoryEntry)
-//     private readonly repo: Repository<HistoryEntry>,
-//   ) {}
+export interface CreateHistoryData {
+  phoneAccountId: string | null;
+  type: RequestType;
+  title: string;
+  messages: HistoryMessage[];
+}
 
-//   save(userId: string | undefined, type: RequestType, result: string) {
-//     return this.repo.save({ userId, type, result });
-//   }
+@Injectable()
+export class HistoryService {
+  constructor(
+    @InjectRepository(HistoryEntry)
+    private readonly repo: Repository<HistoryEntry>,
+  ) {}
 
-//   findByUser(userId: string) {
-//     return this.repo.find({
-//       where: { userId },
-//       order: { createdAt: 'DESC' },
-//       take: 50,
-//     });
-//   }
+  create(data: CreateHistoryData): Promise<HistoryEntry> {
+    return this.repo.save(this.repo.create(data));
+  }
 
-//   star(id: string, starred: boolean) {
-//     return this.repo.update(id, { starred });
-//   }
-// }
+  findByUser(phoneAccountId: string): Promise<HistoryEntry[]> {
+    return this.repo.find({
+      where: { phoneAccountId },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+  }
+
+  async findOne(id: string, phoneAccountId: string): Promise<HistoryEntry> {
+    const entry = await this.repo.findOne({ where: { id, phoneAccountId } });
+    if (!entry) throw new NotFoundException('Запись не найдена');
+    return entry;
+  }
+
+  async remove(id: string, phoneAccountId: string): Promise<void> {
+    await this.findOne(id, phoneAccountId);
+    await this.repo.delete(id);
+  }
+}

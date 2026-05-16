@@ -1,29 +1,35 @@
-// import {
-//   Entity,
-//   PrimaryGeneratedColumn,
-//   Column,
-//   CreateDateColumn,
-// } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
 
-// export type RequestType = 'describe' | 'currency' | 'ocr';
+export type RequestType = 'describe' | 'currency' | 'ocr' | 'volunteer';
 
-// @Entity('history')
-// export class HistoryEntry {
-//   @PrimaryGeneratedColumn('uuid')
-//   id!: string;
+export interface HistoryMessage {
+  role: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+}
 
-//   @Column({ nullable: true })
-//   userId!: string; // null для анонимных
+@Entity('history_entries')
+export class HistoryEntry {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
-//   @Column({ type: 'enum', enum: ['describe', 'currency', 'ocr'] })
-//   type!: RequestType;
+  @Column({ name: 'phone_account_id', type: 'varchar', nullable: true })
+  phoneAccountId!: string | null;
 
-//   @Column('text')
-//   result!: string; // ответ AI
+  @Column({ type: 'enum', enum: ['describe', 'currency', 'ocr', 'volunteer'] })
+  type!: RequestType;
 
-//   @Column({ default: false })
-//   starred!: boolean; // «полезно» (ФТ-14)
+  @Column({ length: 255 })
+  title!: string;
 
-//   @CreateDateColumn()
-//   createdAt!: Date;
-// }
+  @Column({ type: 'jsonb', default: [] })
+  messages!: HistoryMessage[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+}

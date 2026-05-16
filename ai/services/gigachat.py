@@ -22,7 +22,7 @@ class GigaChatService:
         with self._client() as giga:
             response = giga.chat(Chat(
                 messages=[Messages(role=MessagesRole.USER, content=text)],
-                model="GigaChat-2-Pro",
+                model="GigaChat-2-Max",
             ))
             return response.choices[0].message.content, response.model
 
@@ -43,6 +43,6 @@ class GigaChatService:
                         attachments=[uploaded.id_]  # передаём id загруженного файла
                     )
                 ],
-                model="GigaChat-2-Pro"
+                model="GigaChat-2-Max"
             ))
             return response.choices[0].message.content, response.model
