@@ -5,6 +5,8 @@ networks:
     driver: bridge
   backend_net:
     driver: bridge
+  shared-web:
+    external: true
 
 volumes:
   postgres_data:
@@ -29,6 +31,7 @@ services:
       - certbot_www:/var/www/certbot:ro
     networks:
       - frontend_net
+      - shared-web
     depends_on:
       - front
       - api
@@ -43,6 +46,7 @@ services:
     restart: unless-stopped
     networks:
       - frontend_net
+      - shared-web
 
   api:
     image: ghcr.io/${GHCR_OWNER}/vizhu-api:latest
