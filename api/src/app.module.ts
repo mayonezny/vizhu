@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-// import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
 import { AiModule } from './modules/ai/ai.module';
-// import { HistoryModule } from './modules/history/history.module';
-import { HealthController } from './common/health.controller';
 import { AuthModule } from './modules/auth/auth.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from './modules/users/users.module';
+import { HistoryModule } from './modules/history/history.module';
+import { HealthController } from './common/health.controller';
 
 @Module({
   imports: [
@@ -16,14 +16,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      synchronize: true, // в проде — миграции
+      synchronize: true, // TODO: заменить на миграции перед релизом
     }),
 
-    HttpModule.register({ timeout: 15000 }), // 15с для AI-запросов
+    HttpModule.register({ timeout: 15000 }),
 
-    AuthModule,
     AiModule,
-    // HistoryModule,
+    AuthModule,
+    UsersModule,
+    HistoryModule,
   ],
   controllers: [HealthController],
 })
