@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth';
 import { AuthPage } from '@/pages/AuthPage';
 import { CallCodePage } from '@/pages/CallCodePage';
 import { DialogPage } from '@/pages/DialogPage';
+import { HelpPage } from '@/pages/HelpPage';
 import { HistoryDetailPage } from '@/pages/HistoryDetailPage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { HomePage } from '@/pages/HomePage';
@@ -50,6 +51,11 @@ export const router = createBrowserRouter([
             path: 'history',
             element: <HistoryPage />,
             handle: { title: 'История', headerVariant: 'back' },
+          },
+          {
+            path: 'help',
+            element: <HelpPage />,
+            handle: { title: 'Кому позвонить?', headerVariant: 'back' },
           },
         ],
       },

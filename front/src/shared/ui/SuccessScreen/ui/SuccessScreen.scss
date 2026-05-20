@@ -10,7 +10,7 @@
   padding: var(--pad-6);
   color: #fff;
   text-align: center;
-  background: var(--color-primary);
+  background: var(--blue-700);
 
   &__logo {
     svg {
@@ -54,7 +54,7 @@
     margin-top: var(--space-3);
 
     .btn {
-      color: var(--color-primary);
+      color: var(--blue-700);
       background: #fff;
       border-color: transparent;
 

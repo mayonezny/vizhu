@@ -7,6 +7,8 @@ interface AuthState {
   accessToken: string | null;
   phone: string | null;
   userName: string | null;
+  favoriteContactName: string | null;
+  favoriteContactPhone: string | null;
 }
 
 interface AuthActions {
@@ -14,6 +16,7 @@ interface AuthActions {
   logout: () => void;
   setPhone: (phone: string) => void;
   setUserName: (name: string) => void;
+  setFavoriteContact: (name: string, phone: string) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -25,6 +28,8 @@ export const useAuthStore = createPersistedStore<AuthStore>(
     accessToken: null,
     phone: null,
     userName: null,
+    favoriteContactName: null,
+    favoriteContactPhone: null,
     login: (accessToken) =>
       set((draft) => {
         draft.isAuthed = true;
@@ -46,6 +51,11 @@ export const useAuthStore = createPersistedStore<AuthStore>(
     setUserName: (name) =>
       set((draft) => {
         draft.userName = name;
+      }),
+    setFavoriteContact: (name, phone) =>
+      set((draft) => {
+        draft.favoriteContactName = name;
+        draft.favoriteContactPhone = phone;
       }),
   }),
   {
