@@ -1,0 +1,107 @@
+@use 'shared/styles/_mixins' as m;
+
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+
+  &__header {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+  }
+
+  &__avatar {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    color: var(--color-primary);
+    background: var(--color-primary-ghost);
+    border-radius: 50%;
+  }
+
+  &__name {
+    @include m.text-24;
+
+    flex: 1;
+    color: var(--color-text);
+  }
+
+  &__ipra {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--pad-5);
+    color: var(--white);
+    background: var(--color-primary);
+    border-radius: var(--radius-lg);
+  }
+
+  &__ipra-tags {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  &__ipra-tag {
+    @include m.text-12;
+
+    padding: 2px var(--pad-2);
+    font-weight: 600;
+    color: var(--color-primary);
+    letter-spacing: 0.05em;
+    background: rgb(255 255 255 / 90%);
+    border-radius: var(--radius-xs);
+  }
+
+  &__ipra-title {
+    @include m.text-32;
+
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  &__ipra-date {
+    @include m.text-14;
+
+    margin: 0;
+    opacity: 0.85;
+  }
+
+  &__ipra-features {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  &__ipra-feature {
+    @include m.text-14;
+
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  &__copyright {
+    @include m.text-14;
+
+    margin: 0;
+    color: var(--color-text-muted);
+    text-align: center;
+    white-space: pre-line;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: center;
+    margin-top: auto;
+  }
+}

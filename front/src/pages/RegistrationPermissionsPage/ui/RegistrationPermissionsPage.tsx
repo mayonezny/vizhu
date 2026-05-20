@@ -2,6 +2,7 @@ import { Bell, Camera, ChevronLeft, MapPin, Mic } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
+import { useAuthStore } from '@/features/auth';
 import { registrationApi, useRegistrationStore } from '@/features/registration';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
@@ -76,6 +77,7 @@ const requestPermissions = async (perms: Record<PermKey, boolean>) => {
 
 export const RegistrationPermissionsPage = () => {
   const navigate = useNavigate();
+  const setUserName = useAuthStore((s) => s.setUserName);
   const { name, age, blindnessTypeId, reset } = useRegistrationStore();
   const [enabled, setEnabled] = useState<Record<PermKey, boolean>>({
     camera: true,
@@ -103,6 +105,7 @@ export const RegistrationPermissionsPage = () => {
         ...(parsedAge !== undefined && !isNaN(parsedAge) && { age: parsedAge }),
         ...(blindnessTypeId !== null && { blindnessTypeId }),
       });
+      setUserName(name);
       reset();
       void navigate('/registration/welcome', { replace: true });
     } catch {

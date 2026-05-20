@@ -11,6 +11,7 @@ import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { PhoneAuthPage } from '@/pages/PhoneAuthPage';
+import { ProfilePage } from '@/pages/ProfilePage';
 import { RegistrationIpraPage } from '@/pages/RegistrationIpraPage';
 import { RegistrationNamePage } from '@/pages/RegistrationNamePage';
 import { RegistrationPermissionsPage } from '@/pages/RegistrationPermissionsPage';
@@ -56,6 +57,11 @@ export const router = createBrowserRouter([
             path: 'help',
             element: <HelpPage />,
             handle: { title: 'Кому позвонить?', headerVariant: 'back' },
+          },
+          {
+            path: 'profile',
+            element: <ProfilePage />,
+            handle: { title: 'Профиль', headerVariant: 'back' },
           },
         ],
       },
