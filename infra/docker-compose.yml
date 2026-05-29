@@ -31,6 +31,7 @@ services:
       - frontend_net
     depends_on:
       - front
+      - landing
       - api
 
   front:
@@ -40,6 +41,17 @@ services:
       dockerfile: Dockerfile
       target: production
     container_name: vizhu_front
+    restart: unless-stopped
+    networks:
+      - frontend_net
+
+  landing:
+    image: ghcr.io/${GHCR_OWNER}/vizhu-landing:latest
+    build:
+      context: ../landing
+      dockerfile: Dockerfile
+      target: production
+    container_name: vizhu_landing
     restart: unless-stopped
     networks:
       - frontend_net

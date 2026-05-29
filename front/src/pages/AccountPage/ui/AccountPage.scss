@@ -1,0 +1,143 @@
+@use 'shared/styles/_mixins' as m;
+
+.account {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding-bottom: var(--pad-4);
+
+  &__head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__greeting {
+    @include m.text-16;
+
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  &__name {
+    @include m.text-24;
+
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__section-title {
+    @include m.text-24;
+
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  &__section-desc {
+    @include m.text-16;
+
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    padding: var(--space-4);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-lg);
+  }
+
+  &__item-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--color-primary);
+    background: var(--color-primary-ghost, rgb(37 99 235 / 8%));
+    border-radius: var(--radius-md);
+  }
+
+  &__item-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__item-label {
+    @include m.text-16;
+
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  &__item-desc {
+    @include m.text-12;
+
+    color: var(--color-text-muted);
+  }
+
+  &__status {
+    @include m.text-14;
+
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: var(--space-1);
+    align-items: center;
+    font-weight: 600;
+
+    &--granted {
+      color: var(--color-success);
+    }
+  }
+
+  &__request {
+    @include m.text-14;
+
+    flex-shrink: 0;
+    padding: var(--pad-2) var(--pad-4);
+    font-weight: 600;
+    color: var(--color-surface);
+    background: var(--color-primary);
+    border-radius: var(--radius-md);
+    transition: background 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 3px var(--color-bg),
+        0 0 0 6px var(--color-primary);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
+  }
+}

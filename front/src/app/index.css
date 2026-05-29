@@ -111,6 +111,28 @@ body,
   overflow-x: clip;
 }
 
+/* На широких экранах приложение остаётся «мобильным»: узкая колонка по центру,
+   а вокруг — фон-подложка. Мобильный и планшетный лейаут не меняются. */
+@media (width >= 1024px) {
+  body {
+    display: flex;
+    justify-content: center;
+    background: var(--color-surface-2);
+  }
+
+  #root {
+    width: min(30vw, 460px);
+    min-width: 390px;
+    background: var(--color-bg);
+    border-inline: 1px solid var(--color-border);
+    box-shadow: 0 0 40px rgb(15 23 42 / 12%);
+
+    /* transform делает #root containing-block'ом для position: fixed потомков
+       (оверлеи камеры, диалога, уведомления) — они остаются внутри колонки. */
+    transform: translateZ(0);
+  }
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
