@@ -2,6 +2,7 @@ import { createBrowserRouter, redirect } from 'react-router';
 
 import { useAuthStore } from '@/features/auth';
 import { useOnboardingStore } from '@/features/onboarding';
+import { AccountPage } from '@/pages/AccountPage';
 import { AuthPage } from '@/pages/AuthPage';
 import { CallCodePage } from '@/pages/CallCodePage';
 import { DialogPage } from '@/pages/DialogPage';
@@ -62,6 +63,11 @@ export const router = createBrowserRouter([
             path: 'history',
             element: <HistoryPage />,
             handle: { title: 'История', headerVariant: 'back' },
+          },
+          {
+            path: 'profile',
+            element: <AccountPage />,
+            handle: { title: 'Профиль', headerVariant: 'back' },
           },
         ],
       },

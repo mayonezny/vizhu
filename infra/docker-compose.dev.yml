@@ -18,6 +18,14 @@ services:
       VITE_WS_URL: ws://localhost/ws
     command: npm run dev -- --host 0.0.0.0 --port 5173
 
+  landing:
+    build:
+      target: development
+    volumes:
+      - ../landing:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+
   api:
     build:
       target: development

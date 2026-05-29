@@ -34,6 +34,7 @@ services:
       - shared-web
     depends_on:
       - front
+      - landing
       - api
 
   front:
@@ -47,6 +48,17 @@ services:
     networks:
       - frontend_net
       - shared-web
+
+  landing:
+    image: ghcr.io/${GHCR_OWNER}/vizhu-landing:latest
+    build:
+      context: ../landing
+      dockerfile: Dockerfile
+      target: production
+    container_name: vizhu_landing
+    restart: unless-stopped
+    networks:
+      - frontend_net
 
   api:
     image: ghcr.io/${GHCR_OWNER}/vizhu-api:latest
