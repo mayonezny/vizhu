@@ -26,7 +26,14 @@ class GigaChatService:
             ))
             return response.choices[0].message.content, response.model
 
-    async def vision(self, image_base64: str, mime_type: str, prompt: str) -> tuple[str, str]:
+    async def vision(
+        self,
+        image_base64: str,
+        mime_type: str,
+        prompt: str,
+        temperature: float | None = None,
+        top_p: float | None = None,
+    ) -> tuple[str, str]:
         image_bytes = base64.b64decode(image_base64)
 
         with self._client() as giga:
@@ -35,6 +42,7 @@ class GigaChatService:
                 ("image.jpg", BytesIO(image_bytes), mime_type)
             )
 
+            # temperature/top_p передаём только если заданы — иначе берётся дефолт модели
             response = giga.chat(Chat(
                 messages=[
                     Messages(
@@ -43,6 +51,8 @@ class GigaChatService:
                         attachments=[uploaded.id_]  # передаём id загруженного файла
                     )
                 ],
-                model="GigaChat-2-Max"
+                model="GigaChat-2-Max",
+                temperature=temperature,
+                top_p=top_p,
             ))
             return response.choices[0].message.content, response.model
