@@ -83,7 +83,9 @@ export const PhoneAuthPage = () => {
         <h1 id="phone-auth-title" className="phone-auth__title">
           Ваш номер телефона
         </h1>
-        <p className="phone-auth__desc">Отправим SMS с кодом подтверждения.</p>
+        <p className="phone-auth__desc">
+          Наш голосовой ассистент позвонит Вам и продиктует код подтверждения.
+        </p>
       </div>
 
       <form
@@ -105,7 +107,7 @@ export const PhoneAuthPage = () => {
         />
 
         <p className="phone-auth__hint" aria-hidden="true">
-          SMS бесплатны по всей России
+          С Вас не взимается плата за звонок
         </p>
 
         <Button type="submit" disabled={isSubmitting} aria-label="Получить код подтверждения">

@@ -80,7 +80,10 @@ export const HomePage = () => {
   );
 
   return (
-    <div className="home-page">
+    <div
+      className="home-page"
+      aria-label="Панель действий. Смахните вправо чтобы перейти к голосовому ассистенту"
+    >
       <VoiceButton onClick={() => setOverlayOpen(true)} />
 
       <section aria-labelledby="quick-actions-heading" className="home-page__quick-actions">

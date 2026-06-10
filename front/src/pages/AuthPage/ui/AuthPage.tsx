@@ -38,8 +38,8 @@ export const AuthPage = () => {
           Вход или регистрация
         </h1>
         <p className="auth__desc">
-          Введите номер телефона — отправим код в SMS. Если вы новый пользователь — создадим
-          аккаунт.
+          Введите номер телефона — наш голосовой ассистент продиктует код в звонке. Если вы новый
+          пользователь — создадим аккаунт.
         </p>
       </div>
 
@@ -53,13 +53,13 @@ export const AuthPage = () => {
           Войти по номеру
         </Button>
 
-        <Button
+        {/* <Button
           iconPosition="right"
           onClick={handleGosuslugiAuth}
           aria-label="Войти через портал Госуслуг"
         >
           Войти через Госуслуги
-        </Button>
+        </Button> */}
 
         <div className="auth__separator" role="separator" aria-label="или">
           <span aria-hidden="true">или</span>
