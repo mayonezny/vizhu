@@ -80,6 +80,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: 7d
       SMSC_API_KEY: ${SMSC_API_KEY}
+      LIVEKIT_HOST: http://livekit:7880    
+      LIVEKIT_URL: wss://rtc.vizhu.su      
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}  
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET} 
     depends_on:
       postgres:
         condition: service_healthy
@@ -114,6 +118,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+  
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: vizhu_livekit
+    restart: unless-stopped
+    command: --config /etc/livekit/livekit.yaml --node-ip 51.250.114.230
+    networks:
+      - frontend_net
+      - backend_net
+    ports:
+      - "7881:7881"
+      - "7882:7882/udp"
+    volumes:
+      - ./livekit/livekit.yaml:/etc/livekit/livekit.yaml:ro
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
 
   postgres:
     image: postgres:16-alpine
