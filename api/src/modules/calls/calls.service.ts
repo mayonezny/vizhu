@@ -7,7 +7,7 @@ import {
   type VideoGrant,
 } from 'livekit-server-sdk';
 
-export type CallRole = 'blind' | 'volunteer'; // caller = незрячий, helper = волонтёр
+import { UserRole } from '../users/user-role.enum';
 
 @Injectable()
 export class CallsService {
@@ -29,7 +29,7 @@ export class CallsService {
   async createToken(params: {
     room: string;
     identity: string;
-    role: CallRole;
+    role: UserRole;
     name?: string;
     ttlSeconds?: number;
   }): Promise<{ url: string; room: string; token: string }> {
@@ -46,7 +46,7 @@ export class CallsService {
       canPublish: true,
       // незрячий публикует камеру + микрофон; волонтёр — только микрофон
       canPublishSources:
-        params.role === 'blind'
+        params.role === UserRole.BLIND
           ? [TrackSource.CAMERA, TrackSource.MICROPHONE]
           : [TrackSource.MICROPHONE],
     };
