@@ -7,59 +7,116 @@ import { UserRole } from '../users/user-role.enum';
 interface PendingRequest {
   requestId: string;
   blindUserId: string;
-  blindSocketId: string;
 }
 interface ActiveRing {
   requestId: string;
   blindUserId: string;
-  blindSocketId: string;
   volunteerId: string;
-  volunteerSocketId: string;
   room: string;
   timer: NodeJS.Timeout;
+}
+interface MatchInfo {
+  url: string;
+  room: string;
+  token: string;
 }
 
 @Injectable()
 export class MatchingService {
   private readonly logger = new Logger(MatchingService.name);
   private server!: Server;
-  //ЗАМЕНИТЬ НА REDIS ! ! !
-  private available = new Map<string, string>(); // volunteerId -> socketId (готов принимать)
+
+  private online = new Map<string, string>(); // userId -> текущий socketId (куда слать)
+  private available = new Set<string>(); // userId волонтёров, готовых принимать
   private pending: PendingRequest[] = []; // очередь незрячих
-  private ringing = new Map<string, ActiveRing>(); // requestId -> звоним волонтёру, ждём accept
+  private ringing = new Map<string, ActiveRing>(); // requestId -> активный дозвон
+  private graceTimers = new Map<string, NodeJS.Timeout>(); // userId -> отложенная чистка
+  private pendingMatch = new Map<string, MatchInfo>(); // userId -> матч для передоставки на реконнекте
 
   private readonly RING_TIMEOUT_MS = 20_000;
+  private readonly GRACE_MS = 12_000; // окно на реконнект до реальной чистки
+  private readonly MATCH_KEEP_MS = 60_000; // сколько держим матч для передоставки
 
   constructor(private readonly calls: CallsService) {}
 
   bindServer(server: Server) {
     this.server = server;
   }
-  private emit(socketId: string, event: string, payload?: any) {
-    this.server.to(socketId).emit(event, payload);
+
+  private emitToUser(userId: string, event: string, payload?: unknown) {
+    const socketId = this.online.get(userId);
+    if (socketId) this.server.to(socketId).emit(event, payload);
   }
 
-  /** Волонтёр включил готовность принимать звонки. */
-  volunteerOnline(volunteerId: string, socketId: string) {
-    this.available.set(volunteerId, socketId);
+  /** Юзер (пере)подключился — вызывается gateway'ем на каждый успешный коннект. */
+  userConnected(userId: string, socketId: string) {
+    this.online.set(userId, socketId);
+    const grace = this.graceTimers.get(userId);
+    if (grace) {
+      clearTimeout(grace);
+      this.graceTimers.delete(userId);
+      this.logger.log(`reconnected within grace: ${userId}`);
+    }
+    // пока отваливался — могли свести в пару; передоставляем матч на свежий сокет
+    const match = this.pendingMatch.get(userId);
+    if (match) this.server.to(socketId).emit('call:matched', match);
+  }
+
+  /** Сокет отвалился. НЕ чистим сразу — ждём реконнект в течение grace. */
+  userDisconnected(userId: string, socketId: string) {
+    if (this.online.get(userId) !== socketId) return; // устаревший сокет — уже переподключился
+    if (this.graceTimers.has(userId)) return;
+    const timer = setTimeout(() => this.purge(userId), this.GRACE_MS);
+    this.graceTimers.set(userId, timer);
+    this.logger.log(`disconnect, grace started: ${userId}`);
+  }
+
+  private purge(userId: string) {
+    this.graceTimers.delete(userId);
+    this.online.delete(userId);
+    this.available.delete(userId);
+    this.pending = this.pending.filter((p) => p.blindUserId !== userId);
+    for (const ring of [...this.ringing.values()]) {
+      if (ring.blindUserId === userId) {
+        clearTimeout(ring.timer);
+        this.ringing.delete(ring.requestId);
+        this.emitToUser(ring.volunteerId, 'call:cancelled');
+        this.available.add(ring.volunteerId); // волонтёр снова свободен
+      } else if (ring.volunteerId === userId) {
+        clearTimeout(ring.timer);
+        this.ringing.delete(ring.requestId);
+        this.retry({
+          requestId: ring.requestId,
+          blindUserId: ring.blindUserId,
+        });
+      }
+    }
+    this.drainQueue();
+    this.logger.log(`purged: ${userId}`);
+  }
+
+  volunteerOnline(volunteerId: string) {
+    this.available.add(volunteerId);
     this.logger.log(`volunteer online: ${volunteerId}`);
-    this.drainQueue(); // вдруг кто-то уже ждёт
+    this.drainQueue();
   }
 
-  /** Незрячий просит помощь. */
-  requestHelp(blindUserId: string, blindSocketId: string) {
-    const requestId = randomUUID();
-    const req: PendingRequest = { requestId, blindUserId, blindSocketId };
-    const free = this.available.keys().next();
+  requestHelp(blindUserId: string) {
+    // не плодим дубли (важно: на реконнекте фронт может повторно прислать call:request)
+    if (this.pending.some((p) => p.blindUserId === blindUserId)) return;
+    if ([...this.ringing.values()].some((r) => r.blindUserId === blindUserId))
+      return;
+
+    const req: PendingRequest = { requestId: randomUUID(), blindUserId };
+    const free = this.available.values().next();
     if (free.done) {
       this.pending.push(req);
-      this.emit(blindSocketId, 'call:waiting'); // волонтёров нет — ждём
+      this.emitToUser(blindUserId, 'call:waiting');
       return;
     }
-    this.startRing(req, free.value, this.available.get(free.value)!);
+    this.startRing(req, free.value);
   }
 
-  /** Волонтёр принял звонок → сводим обоих. */
   async accept(requestId: string, volunteerId: string) {
     const ring = this.ringing.get(requestId);
     if (!ring || ring.volunteerId !== volunteerId) return;
@@ -77,91 +134,63 @@ export class MatchingService {
       identity: ring.blindUserId,
       role: UserRole.BLIND,
     });
-    this.emit(ring.volunteerSocketId, 'call:matched', volunteerTok);
-    this.emit(ring.blindSocketId, 'call:matched', blindTok);
+    this.deliverMatch(volunteerId, volunteerTok);
+    this.deliverMatch(ring.blindUserId, blindTok);
     this.logger.log(
       `matched ${ring.blindUserId} <-> ${volunteerId} in ${ring.room}`,
     );
   }
 
-  /** Волонтёр отклонил → пробуем следующего. */
   decline(requestId: string, volunteerId: string) {
     const ring = this.ringing.get(requestId);
     if (!ring || ring.volunteerId !== volunteerId) return;
     clearTimeout(ring.timer);
     this.ringing.delete(requestId);
-    this.retry(ring); // назад в поиск, но уже без этого волонтёра
+    this.retry({ requestId: ring.requestId, blindUserId: ring.blindUserId });
   }
 
-  /** Отвал сокета — чистим за собой. */
-  handleDisconnect(userId: string, socketId: string) {
-    if (this.available.get(userId) === socketId) this.available.delete(userId);
-    this.pending = this.pending.filter((p) => p.blindSocketId !== socketId);
-    for (const ring of this.ringing.values()) {
-      if (ring.blindSocketId === socketId) {
-        // незрячий ушёл — отменяем звонок волонтёру
-        clearTimeout(ring.timer);
-        this.ringing.delete(ring.requestId);
-        this.emit(ring.volunteerSocketId, 'call:cancelled');
-      } else if (ring.volunteerSocketId === socketId) {
-        // волонтёр отвалился — ищем другого
-        clearTimeout(ring.timer);
-        this.ringing.delete(ring.requestId);
-        this.retry(ring);
-      }
-    }
+  private deliverMatch(userId: string, match: MatchInfo) {
+    this.pendingMatch.set(userId, match);
+    this.emitToUser(userId, 'call:matched', match);
+    setTimeout(() => this.pendingMatch.delete(userId), this.MATCH_KEEP_MS); // чтоб не тёк
   }
 
-  private startRing(
-    req: PendingRequest,
-    volunteerId: string,
-    volunteerSocketId: string,
-  ) {
-    this.available.delete(volunteerId); // занят, пока звоним
+  private startRing(req: PendingRequest, volunteerId: string) {
+    this.available.delete(volunteerId);
     const room = `call_${req.requestId}`;
     const timer = setTimeout(() => {
-      // не принял за таймаут — как отклонил
       this.ringing.delete(req.requestId);
-      this.retry({ ...ring });
+      this.retry(req); // не ответил за таймаут — как отклонил
     }, this.RING_TIMEOUT_MS);
-    const ring: ActiveRing = {
+    this.ringing.set(req.requestId, {
       requestId: req.requestId,
       blindUserId: req.blindUserId,
-      blindSocketId: req.blindSocketId,
       volunteerId,
-      volunteerSocketId,
       room,
       timer,
-    };
-    this.ringing.set(req.requestId, ring);
-    this.emit(volunteerSocketId, 'call:incoming', {
+    });
+    this.emitToUser(volunteerId, 'call:incoming', {
       requestId: req.requestId,
       blindUserId: req.blindUserId,
     });
-    this.emit(req.blindSocketId, 'call:searching'); // нашли кандидата, звоним ему
+    this.emitToUser(req.blindUserId, 'call:searching');
   }
 
-  /** Вернуть заявку в поиск, попробовать другого свободного волонтёра. */
-  private retry(ring: ActiveRing) {
-    const req: PendingRequest = {
-      requestId: ring.requestId,
-      blindUserId: ring.blindUserId,
-      blindSocketId: ring.blindSocketId,
-    };
-    const next = this.available.keys().next();
+  private retry(req: PendingRequest) {
+    const next = this.available.values().next();
     if (next.done) {
-      this.pending.unshift(req); // никого нет — в начало очереди
-      this.emit(req.blindSocketId, 'call:waiting');
+      this.pending.unshift(req);
+      this.emitToUser(req.blindUserId, 'call:waiting');
       return;
     }
-    this.startRing(req, next.value, this.available.get(next.value)!);
+    this.startRing(req, next.value);
   }
 
   private drainQueue() {
     while (this.pending.length && this.available.size) {
       const req = this.pending.shift()!;
-      const v = this.available.keys().next().value as string;
-      this.startRing(req, v, this.available.get(v)!);
+      const v = this.available.values().next().value as string;
+      this.startRing(req, v);
     }
   }
 }

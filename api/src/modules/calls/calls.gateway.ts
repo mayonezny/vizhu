@@ -46,9 +46,10 @@ export class CallsGateway
         client.disconnect();
         return;
       }
-      const payload = this.jwt.verify<JwtPayload>(token); // дженерик → payload типизирован
-      const user = await this.users.getProfile(payload.sub); // sub = phoneAccount uuid
-      this.setUser(client, { id: user.uuid, role: user.role }); // ← user.uuid: сверь с контроллером
+      const payload = this.jwt.verify<JwtPayload>(token);
+      const user = await this.users.getProfile(payload.sub);
+      this.setUser(client, { id: user.uuid, role: user.role });
+      this.matching.userConnected(user.uuid, client.id); // ← было: ничего
     } catch {
       client.disconnect();
     }
@@ -56,23 +57,20 @@ export class CallsGateway
 
   handleDisconnect(client: Socket): void {
     const user = this.getUser(client);
-    if (user) this.matching.handleDisconnect(user.id, client.id);
+    if (user) this.matching.userDisconnected(user.id, client.id); // ← было: handleDisconnect
   }
 
   @SubscribeMessage('volunteer:online')
   onVolunteerOnline(@ConnectedSocket() client: Socket): void {
     const user = this.getUser(client);
-    if (user?.role === UserRole.VOLUNTEER) {
-      this.matching.volunteerOnline(user.id, client.id);
-    }
+    if (user?.role === UserRole.VOLUNTEER)
+      this.matching.volunteerOnline(user.id); // без socketId
   }
 
   @SubscribeMessage('call:request')
   onRequest(@ConnectedSocket() client: Socket): void {
     const user = this.getUser(client);
-    if (user?.role === UserRole.BLIND) {
-      this.matching.requestHelp(user.id, client.id);
-    }
+    if (user?.role === UserRole.BLIND) this.matching.requestHelp(user.id); // без socketId
   }
 
   @SubscribeMessage('call:accept')
