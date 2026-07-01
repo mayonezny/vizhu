@@ -2,6 +2,7 @@ import { Flame, HeartPulse, Phone, ShieldAlert } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
+import { useProfile } from '@/features/profile';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 
 import './HelpPage.scss';
@@ -20,6 +21,14 @@ const EMERGENCY_SERVICES: EmergencyService[] = [
 
 export const HelpPage = () => {
   const navigate = useNavigate();
+  const { data: profile, isLoading } = useProfile();
+
+  // «Помощь» — экран незрячего. Волонтёру здесь делать нечего → в кабинет.
+  useEffect(() => {
+    if (!isLoading && profile?.role === 'volunteer') {
+      void navigate('/volunteer', { replace: true });
+    }
+  }, [isLoading, profile, navigate]);
 
   useEffect(() => {
     announceRouteChange('Помощь. Кнопка вызова волонтёра и телефоны экстренных служб.');

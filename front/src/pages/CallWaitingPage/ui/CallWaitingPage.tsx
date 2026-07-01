@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import { useShallow } from 'zustand/shallow';
 
 import { useCallStore } from '@/features/calls';
+import { useProfile } from '@/features/profile';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 
@@ -22,13 +23,25 @@ const STATUS: Record<string, string> = {
 export const CallWaitingPage = () => {
   const navigate = useNavigate();
   const [seconds, setSeconds] = useState(0);
+  const { data: profile, isLoading } = useProfile();
+  const isVolunteer = profile?.role === 'volunteer';
 
   const { phase, requestHelp } = useCallStore(
     useShallow((s) => ({ phase: s.phase, requestHelp: s.requestHelp })),
   );
 
+  // Вызов волонтёра — действие незрячего. Волонтёра сюда не пускаем.
+  useEffect(() => {
+    if (!isLoading && isVolunteer) {
+      void navigate('/volunteer', { replace: true });
+    }
+  }, [isLoading, isVolunteer, navigate]);
+
   // Стартуем запрос при входе на экран; на выходе без матча — отменяем.
   useEffect(() => {
+    if (isVolunteer) {
+      return;
+    }
     requestHelp();
     announceRouteChange('Ищем волонтёра. Пожалуйста, подождите.');
 
@@ -38,7 +51,7 @@ export const CallWaitingPage = () => {
         cancelRequest();
       }
     };
-  }, [requestHelp]);
+  }, [requestHelp, isVolunteer]);
 
   // Секундомер ожидания.
   useEffect(() => {

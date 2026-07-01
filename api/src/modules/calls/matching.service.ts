@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import type { Server } from 'socket.io';
 import { CallsService } from './calls.service';
-import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/user-role.enum';
 
 interface PendingRequest {
@@ -38,10 +37,7 @@ export class MatchingService {
   private readonly GRACE_MS = 12_000; // окно на реконнект до реальной чистки
   private readonly MATCH_KEEP_MS = 60_000; // сколько держим матч для передоставки
 
-  constructor(
-    private readonly calls: CallsService,
-    private readonly users: UsersService,
-  ) {}
+  constructor(private readonly calls: CallsService) {}
 
   bindServer(server: Server) {
     this.server = server;
@@ -128,24 +124,16 @@ export class MatchingService {
     this.ringing.delete(requestId);
 
     await this.calls.ensureRoom(ring.room);
-    // Кладём отображаемое имя в LiveKit-токен (participant.name), чтобы каждая
-    // сторона могла подписать карточку собеседника. Имя не критично — если юзер
-    // не нашёлся, просто не передаём его.
-    const [volunteerName, blindName] = await Promise.all([
-      this.safeName(volunteerId),
-      this.safeName(ring.blindUserId),
-    ]);
+    // Имена НЕ кладём в токен: стороны анонимны друг для друга (приватность).
     const volunteerTok = await this.calls.createToken({
       room: ring.room,
       identity: volunteerId,
       role: UserRole.VOLUNTEER,
-      name: volunteerName,
     });
     const blindTok = await this.calls.createToken({
       room: ring.room,
       identity: ring.blindUserId,
       role: UserRole.BLIND,
-      name: blindName,
     });
     this.deliverMatch(volunteerId, volunteerTok);
     this.deliverMatch(ring.blindUserId, blindTok);
@@ -160,15 +148,6 @@ export class MatchingService {
     clearTimeout(ring.timer);
     this.ringing.delete(requestId);
     this.retry({ requestId: ring.requestId, blindUserId: ring.blindUserId });
-  }
-
-  private async safeName(userId: string): Promise<string | undefined> {
-    try {
-      const user = await this.users.getByUuid(userId);
-      return user.name;
-    } catch {
-      return undefined;
-    }
   }
 
   private deliverMatch(userId: string, match: MatchInfo) {

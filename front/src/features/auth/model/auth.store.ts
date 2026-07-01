@@ -1,5 +1,6 @@
 import { setAccessToken } from '@/shared/api/token-store';
 import { STORAGE_KEYS } from '@/shared/config/storage-keys';
+import { queryClient } from '@/shared/lib/tanstack-query';
 import { createPersistedStore } from '@/shared/lib/zustand';
 
 interface AuthState {
@@ -30,6 +31,8 @@ export const useAuthStore = createPersistedStore<AuthStore>(
         draft.isAuthed = true;
         draft.accessToken = accessToken;
         setAccessToken(accessToken);
+        // Новый аккаунт — чистим кэш, чтобы не показать данные прошлого юзера.
+        queryClient.clear();
       }),
     logout: () =>
       set((draft) => {
@@ -38,6 +41,8 @@ export const useAuthStore = createPersistedStore<AuthStore>(
         draft.phone = null;
         draft.userName = null;
         setAccessToken(null);
+        // Сбрасываем весь кэш запросов (профиль и пр.) при выходе.
+        queryClient.clear();
       }),
     setPhone: (phone) =>
       set((draft) => {

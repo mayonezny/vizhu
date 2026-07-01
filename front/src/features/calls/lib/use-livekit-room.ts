@@ -2,9 +2,9 @@ import {
   Room,
   RoomEvent,
   Track,
-  type RemoteParticipant,
+  VideoPresets,
   type RemoteTrack,
-  type RemoteTrackPublication,
+  type VideoCaptureOptions,
 } from 'livekit-client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -15,23 +15,29 @@ import type { MatchInfo } from '../model/types';
 
 export type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
+/** Причина завершения: сам положил трубку / собеседник ушёл / комната закрылась. */
+export type EndReason = 'self' | 'peer' | 'closed';
+
+type FacingMode = 'environment' | 'user';
+
 type UseLiveKitRoomParams = {
   match: MatchInfo;
   role: UserRole;
-  onDisconnected?: () => void;
+  onDisconnected?: (reason: EndReason) => void;
 };
 
 export type LiveKitRoomState = {
   connectionState: ConnectionState;
   micEnabled: boolean;
   cameraEnabled: boolean;
-  remoteName: string | null;
   remoteConnected: boolean;
   /** Собеседник публикует видео (актуально для волонтёра — видит камеру незрячего). */
   remoteVideoActive: boolean;
   canUseCamera: boolean;
+  facingMode: FacingMode;
   toggleMic: () => void;
   toggleCamera: () => void;
+  switchCamera: () => void;
   leave: () => void;
   setRemoteVideoEl: (el: HTMLVideoElement | null) => void;
   setLocalVideoEl: (el: HTMLVideoElement | null) => void;
@@ -40,35 +46,60 @@ export type LiveKitRoomState = {
 /**
  * Подключение к LiveKit-комнате и управление медиа по роли.
  *
- * - blind публикует камеру + микрофон, подписывается на аудио волонтёра.
+ * - blind публикует камеру (по умолчанию задняя) + микрофон, подписывается на аудио волонтёра.
  * - volunteer публикует только микрофон, видит видео + слышит аудио незрячего.
  *
- * Медиа-реконнект держит сам LiveKit — мы лишь озвучиваем смену состояния
- * (критично для незрячего, визуальные индикаторы бесполезны).
+ * Качество: захват 720p + simulcast-слои до 720p, чтобы волонтёр получал резкую
+ * картинку. Медиа-реконнект держит сам LiveKit — мы озвучиваем смену состояния.
  */
 export const useLiveKitRoom = ({
   match,
   role,
   onDisconnected,
 }: UseLiveKitRoomParams): LiveKitRoomState => {
-  const room = useMemo(() => new Room({ adaptiveStream: true, dynacast: true }), []);
   const canUseCamera = role === 'blind';
+  const room = useMemo(
+    () =>
+      new Room({
+        adaptiveStream: true,
+        dynacast: true,
+        // Захватываем камеру в 720p (по умолчанию — задняя).
+        videoCaptureDefaults: {
+          resolution: VideoPresets.h720.resolution,
+          facingMode: 'environment',
+        },
+        // Публикуем несколькими слоями — волонтёру уходит верхний (чёткий).
+        publishDefaults: {
+          videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360, VideoPresets.h720],
+          videoEncoding: VideoPresets.h720.encoding,
+          red: true,
+          dtx: true,
+        },
+      }),
+    [],
+  );
 
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
   const [micEnabled, setMicEnabled] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
-  const [remoteName, setRemoteName] = useState<string | null>(null);
   const [remoteConnected, setRemoteConnected] = useState(false);
   const [remoteVideoActive, setRemoteVideoActive] = useState(false);
+  const [facingMode, setFacingMode] = useState<FacingMode>('environment');
 
   const remoteVideoElRef = useRef<HTMLVideoElement | null>(null);
   const localVideoElRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoTrackRef = useRef<RemoteTrack | null>(null);
   const localCameraTrackRef = useRef<Track | null>(null);
   const audioElsRef = useRef<Set<HTMLMediaElement>>(new Set());
+  const facingModeRef = useRef<FacingMode>('environment');
   const everConnectedRef = useRef(false);
   const onDisconnectedRef = useRef(onDisconnected);
   onDisconnectedRef.current = onDisconnected;
+
+  const captureOptions = (): VideoCaptureOptions => ({
+    resolution: VideoPresets.h720.resolution,
+    facingMode: facingModeRef.current,
+  });
 
   const attachRemoteVideo = useCallback(() => {
     const track = remoteVideoTrackRef.current;
@@ -114,16 +145,10 @@ export const useLiveKitRoom = ({
     };
 
     const syncRemote = () => {
-      const remote = [...room.remoteParticipants.values()][0] as RemoteParticipant | undefined;
-      setRemoteConnected(Boolean(remote));
-      setRemoteName(remote?.name || null);
+      setRemoteConnected(room.remoteParticipants.size > 0);
     };
 
-    const handleSubscribed = (
-      track: RemoteTrack,
-      _pub: RemoteTrackPublication,
-      participant: RemoteParticipant,
-    ) => {
+    const handleSubscribed = (track: RemoteTrack) => {
       if (track.kind === Track.Kind.Video) {
         remoteVideoTrackRef.current = track;
         setRemoteVideoActive(true);
@@ -134,7 +159,6 @@ export const useLiveKitRoom = ({
         document.body.appendChild(el);
         audioElsRef.current.add(el);
       }
-      setRemoteName(participant.name || null);
     };
 
     const handleUnsubscribed = (track: RemoteTrack) => {
@@ -170,7 +194,7 @@ export const useLiveKitRoom = ({
         // Уводим с экрана только если связь была установлена (естественное
         // завершение). Провал первичного коннекта — остаёмся, показываем статус.
         if (everConnectedRef.current) {
-          onDisconnectedRef.current?.();
+          onDisconnectedRef.current?.('closed');
         }
       })
       .on(RoomEvent.TrackSubscribed, handleSubscribed)
@@ -179,6 +203,11 @@ export const useLiveKitRoom = ({
       .on(RoomEvent.ParticipantDisconnected, () => {
         syncRemote();
         setRemoteVideoActive(false);
+        // Собеседник ушёл — на двоих комната опустела, звонок окончен.
+        if (room.remoteParticipants.size === 0) {
+          setConnectionState('disconnected');
+          onDisconnectedRef.current?.('peer');
+        }
       })
       .on(RoomEvent.LocalTrackPublished, syncLocalState)
       .on(RoomEvent.LocalTrackUnpublished, syncLocalState)
@@ -193,7 +222,7 @@ export const useLiveKitRoom = ({
         }
         await room.localParticipant.setMicrophoneEnabled(true);
         if (canUseCamera) {
-          await room.localParticipant.setCameraEnabled(true);
+          await room.localParticipant.setCameraEnabled(true, captureOptions());
         }
         syncLocalState();
         syncRemote();
@@ -228,7 +257,7 @@ export const useLiveKitRoom = ({
       return;
     }
     const next = !room.localParticipant.isCameraEnabled;
-    void room.localParticipant.setCameraEnabled(next).then(() => {
+    void room.localParticipant.setCameraEnabled(next, captureOptions()).then(() => {
       const camPub = room.localParticipant.getTrackPublication(Track.Source.Camera);
       localCameraTrackRef.current = camPub?.track ?? null;
       attachLocalVideo();
@@ -237,22 +266,37 @@ export const useLiveKitRoom = ({
     announceRouteChange(next ? 'Камера включена' : 'Камера выключена');
   }, [room, canUseCamera, attachLocalVideo]);
 
+  const switchCamera = useCallback(() => {
+    if (!canUseCamera) {
+      return;
+    }
+    const nextFacing: FacingMode = facingModeRef.current === 'environment' ? 'user' : 'environment';
+    facingModeRef.current = nextFacing;
+    setFacingMode(nextFacing);
+    const track = room.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
+    if (track) {
+      void track
+        .restartTrack({ resolution: VideoPresets.h720.resolution, facingMode: nextFacing })
+        .then(() => attachLocalVideo());
+    }
+    announceRouteChange(nextFacing === 'environment' ? 'Задняя камера' : 'Передняя камера');
+  }, [room, canUseCamera, attachLocalVideo]);
+
   const leave = useCallback(() => {
     void room.disconnect();
-    // Явное «Завершить» уводит с экрана всегда, даже если коннект не поднялся.
-    onDisconnectedRef.current?.();
   }, [room]);
 
   return {
     connectionState,
     micEnabled,
     cameraEnabled,
-    remoteName,
     remoteConnected,
     remoteVideoActive,
     canUseCamera,
+    facingMode,
     toggleMic,
     toggleCamera,
+    switchCamera,
     leave,
     setRemoteVideoEl,
     setLocalVideoEl,

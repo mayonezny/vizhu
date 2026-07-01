@@ -1,9 +1,9 @@
-import { Mic, MicOff, PhoneOff, User, Video, VideoOff } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, SwitchCamera, User, Video, VideoOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { useCallStore, useLiveKitRoom } from '@/features/calls';
-import type { MatchInfo } from '@/features/calls';
+import type { EndReason, MatchInfo } from '@/features/calls';
 import type { UserRole } from '@/features/profile';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 
@@ -28,32 +28,45 @@ export const CallRoomStage = ({ match, role }: CallRoomStageProps) => {
   const [seconds, setSeconds] = useState(0);
 
   const isBlind = role === 'blind';
-  const remoteFallback = isBlind ? 'Волонтёр' : 'Незрячий';
+  // Имена скрыты: стороны анонимны друг для друга.
+  const remoteLabel = isBlind ? 'Волонтёр' : 'Собеседник';
 
-  const finish = () => {
+  const finish = (reason: EndReason) => {
     if (finishedRef.current) {
       return;
     }
     finishedRef.current = true;
     endCall();
-    announceRouteChange('Звонок завершён.');
-    void navigate(isBlind ? '/help' : '/volunteer', { replace: true });
+    const go = () => void navigate(isBlind ? '/help' : '/volunteer', { replace: true });
+    if (reason === 'self') {
+      announceRouteChange('Звонок завершён.');
+      go();
+    } else {
+      // Собеседник ушёл — озвучиваем и уводим с задержкой, чтобы TTS успел сказать.
+      announceRouteChange(reason === 'peer' ? 'Собеседник завершил звонок.' : 'Звонок завершён.');
+      setTimeout(go, 1600);
+    }
   };
 
   const {
     connectionState,
     micEnabled,
     cameraEnabled,
-    remoteName,
     remoteConnected,
     remoteVideoActive,
     canUseCamera,
     toggleMic,
     toggleCamera,
+    switchCamera,
     leave,
     setRemoteVideoEl,
     setLocalVideoEl,
   } = useLiveKitRoom({ match, role, onDisconnected: finish });
+
+  const handleEnd = () => {
+    finish('self');
+    leave();
+  };
 
   // Секундомер разговора — со момента установления связи.
   useEffect(() => {
@@ -63,8 +76,6 @@ export const CallRoomStage = ({ match, role }: CallRoomStageProps) => {
     const id = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(id);
   }, [connectionState]);
-
-  const remoteLabel = remoteName ?? remoteFallback;
 
   return (
     <main id="main-content" className="call-room" tabIndex={-1} aria-label="Видеозвонок">
@@ -171,10 +182,23 @@ export const CallRoomStage = ({ match, role }: CallRoomStageProps) => {
           </button>
         )}
 
+        {canUseCamera && (
+          <button
+            type="button"
+            className="call-room__ctrl"
+            onClick={switchCamera}
+            disabled={!cameraEnabled}
+            aria-label="Переключить камеру (передняя или задняя)"
+          >
+            <SwitchCamera size={26} aria-hidden="true" />
+            <span className="call-room__ctrl-label">Сменить</span>
+          </button>
+        )}
+
         <button
           type="button"
           className="call-room__ctrl call-room__ctrl--end"
-          onClick={leave}
+          onClick={handleEnd}
           aria-label="Завершить звонок"
         >
           <PhoneOff size={26} aria-hidden="true" />

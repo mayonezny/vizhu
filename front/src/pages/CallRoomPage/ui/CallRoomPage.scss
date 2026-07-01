@@ -219,6 +219,11 @@
     &--end svg {
       background: var(--color-danger);
     }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.4;
+    }
   }
 
   &__ctrl-label {
