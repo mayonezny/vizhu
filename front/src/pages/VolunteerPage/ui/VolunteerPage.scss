@@ -1,0 +1,148 @@
+@use 'shared/styles/_mixins' as m;
+
+.volunteer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-7);
+  width: 100%;
+  padding-bottom: var(--pad-4);
+
+  &__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: center;
+    text-align: center;
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    color: var(--color-primary);
+    background: var(--color-primary-ghost);
+    border-radius: var(--radius-lg);
+  }
+
+  &__title {
+    @include m.text-24;
+
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  &__subtitle {
+    @include m.text-16;
+
+    max-width: 32ch;
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  // ─── Большая кнопка «встать на линию» ───────────────────────────────────────
+  &__stage {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-5);
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__toggle {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: center;
+    width: 220px;
+    height: 220px;
+    padding: var(--pad-4);
+    color: var(--color-primary);
+    cursor: pointer;
+    background: var(--color-primary-ghost);
+    border: 3px solid var(--color-primary);
+    border-radius: 50%;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      filter 0.15s ease,
+      box-shadow 0.2s ease;
+
+    &:active {
+      filter: brightness(0.95);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 4px var(--color-bg),
+        0 0 0 8px var(--color-primary);
+    }
+
+    &--online {
+      color: var(--color-surface);
+      background: var(--color-primary);
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-primary) 55%, transparent);
+      animation: volunteer-pulse 2s ease-out infinite;
+    }
+  }
+
+  &__toggle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__toggle-label {
+    max-width: 9ch;
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  &__status {
+    @include m.text-16;
+
+    margin: 0;
+    font-weight: 600;
+    color: var(--color-text-muted);
+
+    &--online {
+      color: var(--color-primary);
+    }
+  }
+
+  // ─── Пояснение ──────────────────────────────────────────────────────────────
+  &__note {
+    padding: var(--pad-4);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-lg);
+  }
+
+  &__note-text {
+    @include m.text-16;
+
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+}
+
+@keyframes volunteer-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-primary) 55%, transparent);
+  }
+
+  70% {
+    box-shadow: 0 0 0 28px color-mix(in oklab, var(--color-primary) 0%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-primary) 0%, transparent);
+  }
+}

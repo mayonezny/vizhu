@@ -317,6 +317,19 @@ export const handlers = [
     return new HttpResponse(null, { status: 201 });
   }),
 
+  http.get('*/profile', () =>
+    HttpResponse.json({
+      uuid: 'mock-user-uuid',
+      name: 'Светлана Иванова',
+      age: 63,
+      role: 'volunteer',
+      phone: '79001234567',
+      blindnessType: { id: 1, name: 'Незрячий' },
+      isVerified: true,
+      createdAt: new Date().toISOString(),
+    }),
+  ),
+
   http.get('*/history', () => HttpResponse.json(MOCK_HISTORY)),
 
   http.get('*/history/:id', ({ params }) => {

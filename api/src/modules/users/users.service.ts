@@ -43,7 +43,18 @@ export class UsersService {
   async getProfile(phoneAccountId: string): Promise<User> {
     const user = await this.userRepo.findOne({
       where: { phoneAccountId },
-      relations: ['blindnessType'],
+      relations: ['blindnessType', 'phoneAccount'],
+    });
+    if (!user) throw new NotFoundException('Профиль не найден');
+    return user;
+  }
+
+  /** Ищет пользователя по его первичному ключу (uuid) — используется матчингом,
+   * где идентификатор участника = user.uuid, а не phoneAccountId. */
+  async getByUuid(uuid: string): Promise<User> {
+    const user = await this.userRepo.findOne({
+      where: { uuid },
+      relations: ['blindnessType', 'phoneAccount'],
     });
     if (!user) throw new NotFoundException('Профиль не найден');
     return user;

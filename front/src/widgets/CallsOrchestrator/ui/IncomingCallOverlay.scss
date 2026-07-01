@@ -1,0 +1,146 @@
+@use 'shared/styles/_mixins' as m;
+
+.incoming {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12dvh var(--pad-6) 8dvh;
+  color: #fff;
+  background: linear-gradient(160deg, var(--blue-800), var(--gray-900));
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: center;
+    text-align: center;
+  }
+
+  &__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 128px;
+    height: 128px;
+    margin-bottom: var(--space-4);
+    color: #fff;
+    background: rgb(255 255 255 / 15%);
+    border-radius: 50%;
+    animation: incoming-pulse 1.8s ease-out infinite;
+  }
+
+  &__caption {
+    @include m.text-16;
+
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.7;
+  }
+
+  &__title {
+    @include m.text-32;
+
+    margin: 0;
+  }
+
+  &__hint {
+    @include m.text-16;
+
+    margin: 0;
+    opacity: 0.8;
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-7);
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+  }
+
+  &__btn {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: center;
+    color: #fff;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: none;
+
+      .incoming__btn-label {
+        text-decoration: underline;
+      }
+
+      svg {
+        box-shadow:
+          0 0 0 4px rgb(0 0 0 / 30%),
+          0 0 0 8px #fff;
+      }
+    }
+
+    svg {
+      width: 76px;
+      height: 76px;
+      padding: 22px;
+      border-radius: 50%;
+    }
+
+    &--accept svg {
+      background: var(--color-success);
+    }
+
+    &--decline svg {
+      background: var(--color-danger);
+    }
+
+    &:active svg {
+      filter: brightness(0.9);
+    }
+  }
+
+  &__btn--accept svg {
+    animation: incoming-jiggle 1.2s ease-in-out infinite;
+  }
+
+  &__btn-label {
+    @include m.text-16;
+
+    font-weight: 600;
+  }
+}
+
+@keyframes incoming-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(255 255 255 / 35%);
+  }
+
+  70% {
+    box-shadow: 0 0 0 28px rgb(255 255 255 / 0%);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 255 255 / 0%);
+  }
+}
+
+@keyframes incoming-jiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-12deg);
+  }
+
+  75% {
+    transform: rotate(12deg);
+  }
+}

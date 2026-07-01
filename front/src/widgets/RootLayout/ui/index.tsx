@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router';
 
 import { announceRouteChange } from '@/shared/lib/a11y';
+import { CallsOrchestrator } from '@/widgets/CallsOrchestrator';
 import './root-layout.scss';
 
 /**
@@ -33,6 +34,8 @@ export const RootLayout = () => {
       </a>
 
       <Outlet />
+
+      <CallsOrchestrator />
 
       <div
         id="sr-announcer"

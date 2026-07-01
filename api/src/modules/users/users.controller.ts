@@ -88,7 +88,21 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Профиль пользователя' })
   @ApiResponse({ status: 404, description: 'Профиль не найден' })
   async getProfile(@CurrentUser() user: jwtGuard.JwtPayload) {
-    return this.users.getProfile(user.sub);
+    const profile = await this.users.getProfile(user.sub);
+    // Плоский стабильный контракт для фронта: телефон и тип слепоты лежат
+    // в связанных таблицах — отдаём их развёрнутыми, чтобы клиент не гадал.
+    return {
+      uuid: profile.uuid,
+      name: profile.name,
+      age: profile.age,
+      role: profile.role,
+      phone: profile.phoneAccount?.phone ?? null,
+      blindnessType: profile.blindnessType
+        ? { id: profile.blindnessType.id, name: profile.blindnessType.name }
+        : null,
+      isVerified: profile.isVerified,
+      createdAt: profile.createdAt,
+    };
   }
 }
 

@@ -20,6 +20,12 @@ vi.mock('@/shared/lib/theme', () => ({
   useTheme: () => ({ toggle: mockToggle }),
 }));
 
+// Навигация читает роль через профиль (react-query + axios). В тесте роль не важна —
+// достаточно «не волонтёр», чтобы не тянуть весь api-слой и env.
+vi.mock('@/features/profile', () => ({
+  useIsVolunteer: () => false,
+}));
+
 const { PageLayout } = await import('../index');
 const { useMatches } = await import('react-router');
 

@@ -8,6 +8,13 @@ import { z } from 'zod';
  */
 const envSchema = z.object({
   VITE_API_URL: z.string().min(1, 'VITE_API_URL обязателен'),
+  // Адрес Socket.IO-сервера матчинга. По умолчанию — тот же origin, что и
+  // приложение (в проде фронт и сокет на одном домене за nginx).
+  // Пустая строка трактуется как «не задано» → берём origin в рантайме.
+  VITE_SOCKET_URL: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined)),
   VITE_API_TIMEOUT: z
     .string()
     .optional()
@@ -29,6 +36,9 @@ if (!parsed.success) {
 
 export const env = {
   apiUrl: parsed.data.VITE_API_URL,
+  /** Socket.IO матчинга. Пусто → берём origin окна в рантайме. */
+  socketUrl:
+    parsed.data.VITE_SOCKET_URL ?? (typeof window !== 'undefined' ? window.location.origin : ''),
   apiTimeout: parsed.data.VITE_API_TIMEOUT,
   appTitle: parsed.data.VITE_APP_TITLE,
   appEnv: parsed.data.VITE_APP_ENV,

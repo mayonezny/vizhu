@@ -5,7 +5,10 @@ import { useOnboardingStore } from '@/features/onboarding';
 import { AccountPage } from '@/pages/AccountPage';
 import { AuthPage } from '@/pages/AuthPage';
 import { CallCodePage } from '@/pages/CallCodePage';
+import { CallRoomPage } from '@/pages/CallRoomPage';
+import { CallWaitingPage } from '@/pages/CallWaitingPage';
 import { DialogPage } from '@/pages/DialogPage';
+import { HelpPage } from '@/pages/HelpPage';
 import { HistoryDetailPage } from '@/pages/HistoryDetailPage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { HomePage } from '@/pages/HomePage';
@@ -16,6 +19,7 @@ import { RegistrationIpraPage } from '@/pages/RegistrationIpraPage';
 import { RegistrationNamePage } from '@/pages/RegistrationNamePage';
 import { RegistrationPermissionsPage } from '@/pages/RegistrationPermissionsPage';
 import { RegistrationVisionPage } from '@/pages/RegistrationVisionPage';
+import { VolunteerPage } from '@/pages/VolunteerPage';
 import { WelcomePage } from '@/pages/WelcomePage';
 import { OnboardingLayout } from '@/widgets/OnboardingLayout';
 import { PageLayout } from '@/widgets/PageLayout';
@@ -65,6 +69,16 @@ export const router = createBrowserRouter([
             handle: { title: 'История', headerVariant: 'back' },
           },
           {
+            path: 'help',
+            element: <HelpPage />,
+            handle: { title: 'Помощь', headerVariant: 'back' },
+          },
+          {
+            path: 'volunteer',
+            element: <VolunteerPage />,
+            handle: { title: 'Кабинет волонтёра', headerVariant: 'back' },
+          },
+          {
             path: 'profile',
             element: <AccountPage />,
             handle: { title: 'Профиль', headerVariant: 'back' },
@@ -96,6 +110,8 @@ export const router = createBrowserRouter([
         children: [{ path: 'onboarding', element: <OnboardingPage /> }],
       },
       { path: 'dialog', element: <DialogPage />, loader: requireAuth },
+      { path: 'call/waiting', element: <CallWaitingPage />, loader: requireAuth },
+      { path: 'call/room', element: <CallRoomPage />, loader: requireAuth },
       { path: 'history/:id', element: <HistoryDetailPage />, loader: requireAuth },
       { path: '*', element: <NotFoundPage /> },
     ],

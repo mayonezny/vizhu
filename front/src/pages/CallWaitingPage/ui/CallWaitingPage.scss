@@ -1,0 +1,144 @@
+@use 'shared/styles/_mixins' as m;
+
+.call-wait {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-7);
+  align-items: center;
+  justify-content: space-between;
+  height: 100dvh;
+  padding: var(--pad-7) var(--pad-4) var(--pad-6);
+  overflow: hidden;
+
+  &__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: center;
+    text-align: center;
+  }
+
+  &__title {
+    @include m.text-24;
+
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  &__timer {
+    @include m.text-32;
+
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-primary);
+  }
+
+  &__status {
+    @include m.text-16;
+
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  // ─── Пульсирующий диск дозвона ──────────────────────────────────────────────
+  &__pulse {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 220px;
+    height: 220px;
+  }
+
+  &__ring {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--color-primary);
+    border-radius: 50%;
+    opacity: 0;
+    animation: call-wait-ring 2.4s ease-out infinite;
+
+    &--2 {
+      animation-delay: 1.2s;
+    }
+  }
+
+  &__disc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 132px;
+    height: 132px;
+    color: var(--color-surface);
+    background: var(--color-primary);
+    border-radius: 50%;
+    box-shadow: var(--shadow-lg);
+  }
+
+  // ─── Инфо-блок ──────────────────────────────────────────────────────────────
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--pad-4);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-lg);
+  }
+
+  &__info-title {
+    @include m.text-16;
+
+    margin: 0;
+    font-weight: 700;
+    color: var(--color-primary);
+  }
+
+  &__info-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  &__info-yes,
+  &__info-no {
+    @include m.text-16;
+
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    color: var(--color-text);
+  }
+
+  &__info-yes::before {
+    font-weight: 700;
+    color: var(--color-success);
+    content: '✓';
+  }
+
+  &__info-no {
+    color: var(--color-text-muted);
+
+    &::before {
+      font-weight: 700;
+      color: var(--color-text-muted);
+      content: '–';
+    }
+  }
+}
+
+@keyframes call-wait-ring {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.6);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}

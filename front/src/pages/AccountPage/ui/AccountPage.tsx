@@ -1,8 +1,22 @@
-import { Bell, Camera, Check, LogOut, MapPin, Mic } from 'lucide-react';
+import * as Avatar from '@radix-ui/react-avatar';
+import * as Tabs from '@radix-ui/react-tabs';
+import {
+  Bell,
+  Camera,
+  Check,
+  Eye,
+  LogOut,
+  MapPin,
+  Mic,
+  Phone,
+  ShieldCheck,
+  User as UserIcon,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { useAuthStore } from '@/features/auth';
+import { useProfile } from '@/features/profile';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 import { Button } from '@/shared/ui/Button';
 
@@ -104,10 +118,31 @@ const requestPermission = async (key: PermKey): Promise<void> => {
   }
 };
 
+const ROLE_LABEL: Record<string, string> = {
+  volunteer: 'Волонтёр',
+  blind: 'Незрячий',
+};
+
+const formatPhone = (phone: string | null): string => {
+  if (!phone) {
+    return 'Не указан';
+  }
+  const masked = phone.replace(/^(7)(\d{3})(\d{3})(\d{2})(\d{2})$/, '+$1 $2 $3-$4-$5');
+  return masked === phone ? phone : masked;
+};
+
+const initials = (name: string): string =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('') || '?';
+
 export const AccountPage = () => {
   const navigate = useNavigate();
-  const userName = useAuthStore((s) => s.userName);
   const logout = useAuthStore((s) => s.logout);
+  const { data: profile, isLoading } = useProfile();
 
   const [states, setStates] = useState<Record<PermKey, PermState>>({
     camera: 'prompt',
@@ -125,7 +160,7 @@ export const AccountPage = () => {
   }, []);
 
   useEffect(() => {
-    announceRouteChange('Профиль. Управление разрешениями приложения.');
+    announceRouteChange('Профиль. Данные о вас и управление разрешениями.');
     void refresh();
   }, [refresh]);
 
@@ -144,64 +179,130 @@ export const AccountPage = () => {
     void navigate('/auth', { replace: true });
   };
 
+  const displayName = profile?.name ?? '—';
+  const roleLabel = profile ? (ROLE_LABEL[profile.role] ?? profile.role) : '';
+
+  const infoRows: { icon: React.ReactNode; label: string; value: string }[] = [
+    {
+      icon: <ShieldCheck size={22} />,
+      label: 'Роль',
+      value: roleLabel || '—',
+    },
+    {
+      icon: <Phone size={22} />,
+      label: 'Телефон',
+      value: formatPhone(profile?.phone ?? null),
+    },
+    {
+      icon: <UserIcon size={22} />,
+      label: 'Возраст',
+      value: profile?.age !== null && profile?.age !== undefined ? `${profile.age}` : 'Не указан',
+    },
+    {
+      icon: <Eye size={22} />,
+      label: 'Зрение',
+      value: profile?.blindnessType?.name ?? 'Не указано',
+    },
+  ];
+
   return (
     <div className="account">
-      {userName && (
-        <div className="account__head">
-          <p className="account__greeting">Здравствуйте,</p>
-          <p className="account__name">{userName}</p>
-        </div>
-      )}
+      <Tabs.Root className="account__tabs" defaultValue="info">
+        <Tabs.List className="account__tablist" aria-label="Разделы профиля">
+          <Tabs.Trigger className="account__tab" value="info">
+            О себе
+          </Tabs.Trigger>
+          <Tabs.Trigger className="account__tab" value="permissions">
+            Разрешения
+          </Tabs.Trigger>
+        </Tabs.List>
 
-      <section className="account__section" aria-labelledby="account-perms-title">
-        <h2 id="account-perms-title" className="account__section-title">
-          Разрешения
-        </h2>
-        <p className="account__section-desc">
-          Если функция не работает — проверьте разрешение и запросите его заново.
-        </p>
+        {/* ─── Вкладка «О себе» ─────────────────────────────────────────────── */}
+        <Tabs.Content className="account__panel" value="info">
+          <section className="account__hero" aria-label="Ваш профиль">
+            <Avatar.Root className="account__avatar">
+              <Avatar.Fallback className="account__avatar-fallback" delayMs={0}>
+                {profile ? initials(displayName) : <UserIcon size={40} aria-hidden="true" />}
+              </Avatar.Fallback>
+            </Avatar.Root>
 
-        <ul className="account__list" aria-label="Список разрешений">
-          {PERMISSIONS.map(({ key, icon, label, description }) => {
-            const state = states[key];
-            const isGranted = state === 'granted';
-            const isDenied = state === 'denied';
-            const isUnsupported = state === 'unsupported';
+            <div className="account__hero-text">
+              <p className="account__name">{displayName}</p>
+              {roleLabel && <span className="account__role-chip">{roleLabel}</span>}
+            </div>
+          </section>
 
-            return (
-              <li key={key} className="account__item">
-                <span className="account__item-icon" aria-hidden="true">
-                  {icon}
-                </span>
-
-                <span className="account__item-content">
-                  <span className="account__item-label">{label}</span>
-                  <span className="account__item-desc">
-                    {isDenied ? 'Заблокировано — включите в настройках браузера' : description}
+          <section className="account__section" aria-labelledby="account-info-title">
+            <h2 id="account-info-title" className="visually-hidden">
+              Данные профиля
+            </h2>
+            <dl className="account__info">
+              {infoRows.map(({ icon, label, value }) => (
+                <div className="account__info-row" key={label}>
+                  <span className="account__info-icon" aria-hidden="true">
+                    {icon}
                   </span>
-                </span>
+                  <dt className="account__info-label">{label}</dt>
+                  <dd className="account__info-value">{isLoading ? '…' : value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        </Tabs.Content>
 
-                {isGranted ? (
-                  <span className="account__status account__status--granted">
-                    <Check size={18} aria-hidden="true" />
-                    {STATUS_LABEL.granted}
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    className="account__request"
-                    disabled={isUnsupported || pending === key}
-                    aria-label={`${label}: ${STATUS_LABEL[state]}. Запросить разрешение`}
-                    onClick={() => void handleRequest(key)}
-                  >
-                    {pending === key ? 'Запрос…' : isDenied ? 'Повторить' : 'Запросить'}
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+        {/* ─── Вкладка «Разрешения» ─────────────────────────────────────────── */}
+        <Tabs.Content className="account__panel" value="permissions">
+          <section className="account__section" aria-labelledby="account-perms-title">
+            <h2 id="account-perms-title" className="account__section-title">
+              Разрешения
+            </h2>
+            <p className="account__section-desc">
+              Если функция не работает — проверьте разрешение и запросите его заново.
+            </p>
+
+            <ul className="account__list" aria-label="Список разрешений">
+              {PERMISSIONS.map(({ key, icon, label, description }) => {
+                const state = states[key];
+                const isGranted = state === 'granted';
+                const isDenied = state === 'denied';
+                const isUnsupported = state === 'unsupported';
+
+                return (
+                  <li key={key} className="account__item">
+                    <span className="account__item-icon" aria-hidden="true">
+                      {icon}
+                    </span>
+
+                    <span className="account__item-content">
+                      <span className="account__item-label">{label}</span>
+                      <span className="account__item-desc">
+                        {isDenied ? 'Заблокировано — включите в настройках браузера' : description}
+                      </span>
+                    </span>
+
+                    {isGranted ? (
+                      <span className="account__status account__status--granted">
+                        <Check size={18} aria-hidden="true" />
+                        {STATUS_LABEL.granted}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="account__request"
+                        disabled={isUnsupported || pending === key}
+                        aria-label={`${label}: ${STATUS_LABEL[state]}. Запросить разрешение`}
+                        onClick={() => void handleRequest(key)}
+                      >
+                        {pending === key ? 'Запрос…' : isDenied ? 'Повторить' : 'Запросить'}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </Tabs.Content>
+      </Tabs.Root>
 
       <Button
         className="btn--demo"
