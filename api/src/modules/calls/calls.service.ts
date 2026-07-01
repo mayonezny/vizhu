@@ -7,7 +7,7 @@ import {
   type VideoGrant,
 } from 'livekit-server-sdk';
 
-export type CallRole = 'caller' | 'helper'; // caller = незрячий, helper = волонтёр
+export type CallRole = 'blind' | 'volunteer'; // caller = незрячий, helper = волонтёр
 
 @Injectable()
 export class CallsService {
@@ -46,7 +46,7 @@ export class CallsService {
       canPublish: true,
       // незрячий публикует камеру + микрофон; волонтёр — только микрофон
       canPublishSources:
-        params.role === 'caller'
+        params.role === 'blind'
           ? [TrackSource.CAMERA, TrackSource.MICROPHONE]
           : [TrackSource.MICROPHONE],
     };

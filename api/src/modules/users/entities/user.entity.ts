@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { PhoneAccount } from './phone-account.entity';
 import { BlindnessType } from './blindness-type.entity';
+import { UserRole } from '../user-role.enum';
 
 @Entity('users')
 export class User {
@@ -18,6 +19,13 @@ export class User {
 
   @Column({ name: 'phone_account_id', unique: true })
   phoneAccountId!: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.BLIND,
+  })
+  role!: UserRole;
 
   @OneToOne(() => PhoneAccount)
   @JoinColumn({ name: 'phone_account_id' })

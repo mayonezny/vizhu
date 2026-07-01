@@ -5,6 +5,6 @@ export class CreateTokenDto {
   @IsNotEmpty()
   room!: string;
 
-  @IsIn(['caller', 'helper'])
-  role!: 'caller' | 'helper';
+  @IsIn(['blind', 'volunteer'])
+  role!: 'blind' | 'volunteer';
 }
