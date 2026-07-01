@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { HistoryModule } from './modules/history/history.module';
 import { HealthController } from './common/health.controller';
+import { CallsModule } from './modules/calls/calls.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { HealthController } from './common/health.controller';
     AuthModule,
     UsersModule,
     HistoryModule,
+    CallsModule,
   ],
   controllers: [HealthController],
 })
