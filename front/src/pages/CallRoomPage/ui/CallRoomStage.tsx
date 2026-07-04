@@ -24,6 +24,7 @@ const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padSta
 export const CallRoomStage = ({ match, role }: CallRoomStageProps) => {
   const navigate = useNavigate();
   const endCall = useCallStore((s) => s.endCall);
+  const returnToLine = useCallStore((s) => s.returnToLine);
   const finishedRef = useRef(false);
   const [seconds, setSeconds] = useState(0);
 
@@ -36,7 +37,12 @@ export const CallRoomStage = ({ match, role }: CallRoomStageProps) => {
       return;
     }
     finishedRef.current = true;
-    endCall();
+    // Незрячий — полностью выходим. Волонтёр остаётся на линии (снова в пул).
+    if (isBlind) {
+      endCall();
+    } else {
+      returnToLine();
+    }
     const go = () => void navigate(isBlind ? '/help' : '/volunteer', { replace: true });
     if (reason === 'self') {
       announceRouteChange('Звонок завершён.');

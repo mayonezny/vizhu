@@ -32,6 +32,8 @@ interface CallActions {
   decline: (requestId: string) => void;
   /** Звонок завершён — сбрасываем состояние и отключаем сокет матчинга. */
   endCall: () => void;
+  /** Волонтёр завершил звонок, но остаётся на линии — снова в пул свободных. */
+  returnToLine: () => void;
   reset: () => void;
 }
 
@@ -193,6 +195,23 @@ export const useCallStore = createStore<CallStore>('Calls', (set, get) => ({
       d.previewRole = null;
     });
     socket.disconnect();
+  },
+
+  returnToLine: () => {
+    const socket = getSocket();
+    set((d) => {
+      d.phase = 'volunteer-online';
+      d.intent = 'volunteer';
+      d.match = null;
+      d.incoming = null;
+      d.previewRole = null;
+    });
+    // Сокет НЕ рвём — просто снова заявляем присутствие, чтобы принимать звонки.
+    if (socket.connected) {
+      socket.emit('volunteer:online');
+    } else {
+      socket.connect();
+    }
   },
 
   reset: () => {

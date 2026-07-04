@@ -61,17 +61,25 @@ export const useLiveKitRoom = ({
   const room = useMemo(
     () =>
       new Room({
-        adaptiveStream: true,
-        dynacast: true,
+        // Звонок 1-на-1: adaptiveStream/dynacast/simulcast только мешают —
+        // они рассчитаны на SFU с многими подписчиками. Отключаем, чтобы
+        // волонтёр всегда получал единственный полноценный поток.
+        adaptiveStream: false,
+        dynacast: false,
         // Захватываем камеру в 720p (по умолчанию — задняя).
         videoCaptureDefaults: {
           resolution: VideoPresets.h720.resolution,
           facingMode: 'environment',
         },
-        // Публикуем несколькими слоями — волонтёру уходит верхний (чёткий).
+        // Один поток, весь аплинк-битрейт в него. Меньше слоёв = меньше нагрузка
+        // на CPU телефона незрячего = выше fps + нет залипания на 240p.
         publishDefaults: {
-          videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360, VideoPresets.h720],
-          videoEncoding: VideoPresets.h720.encoding,
+          simulcast: false,
+          videoEncoding: {
+            maxBitrate: 3_000_000,
+            maxFramerate: 30,
+          },
+          degradationPreference: 'maintain-framerate',
           red: true,
           dtx: true,
         },

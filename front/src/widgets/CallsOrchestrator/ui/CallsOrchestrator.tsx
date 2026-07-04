@@ -40,7 +40,7 @@ export const CallsOrchestrator = () => {
         void navigate('/call/room');
       }
     }
-    if (phase === 'idle') {
+    if (!match) {
       handledRoomRef.current = null;
     }
   }, [phase, match, pathname, navigate]);
