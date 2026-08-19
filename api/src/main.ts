@@ -22,9 +22,15 @@ async function bootstrap() {
 
   await app.register(fastifyCookie);
 
+  // CORS: web-прод ходит с того же origin (nginx) и в списке не нуждается.
+  // capacitor://localhost (iOS) и https://localhost (Android) — origin'ы
+  // WebView нативного приложения; они используют Bearer + refresh в теле,
+  // куки им не нужны, но credentials оставлен для dev-фронта (5173).
+  const corsOrigins = ['capacitor://localhost', 'https://localhost'];
   if (process.env.NODE_ENV === 'development') {
-    app.enableCors({ origin: 'http://localhost:5173' });
+    corsOrigins.push('http://localhost:5173');
   }
+  app.enableCors({ origin: corsOrigins, credentials: true });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('ВИЖУ API')

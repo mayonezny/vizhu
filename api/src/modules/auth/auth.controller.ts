@@ -22,7 +22,17 @@ import { AuthService, REFRESH_COOKIE } from './auth.service';
 // Локальные интерфейсы — избегаем конфликта nodenext с FastifyRequest/Reply
 interface CookieRequest {
   cookies?: Record<string, string | undefined>;
+  headers?: Record<string, string | string[] | undefined>;
 }
+
+/**
+ * Нативный клиент (Capacitor) шлёт X-Client: native.
+ * Для него refresh-токен ходит в теле запроса/ответа, а не в куке:
+ * куки между capacitor://localhost и API-доменом ненадёжны, токен хранится
+ * в Keychain / EncryptedSharedPreferences на устройстве.
+ */
+const isNativeClient = (req: CookieRequest): boolean =>
+  req.headers?.['x-client'] === 'native';
 
 interface CookieReply {
   setCookie(
@@ -61,6 +71,15 @@ class VerifyOtpBody {
   code?: unknown;
 }
 
+class RefreshBody {
+  @ApiProperty({
+    required: false,
+    description:
+      'Refresh token — только для нативного клиента (X-Client: native). Web использует httpOnly-куку.',
+  })
+  refreshToken?: unknown;
+}
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -91,6 +110,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Неверный или истёкший код' })
   async verifyOtp(
     @Body() body: VerifyOtpBody,
+    @Req() req: CookieRequest,
     @Res({ passthrough: true }) res: CookieReply,
   ) {
     const { phone, code } = body;
@@ -102,24 +122,49 @@ export class AuthController {
     }
 
     const result = await this.auth.verifyOtp(phone, code);
+    if (isNativeClient(req)) {
+      // Натив хранит refresh-токен сам (Keychain/EncryptedSharedPreferences)
+      return {
+        accessToken: result.accessToken,
+        isNewUser: result.isNewUser,
+        refreshToken: result.refreshToken,
+      };
+    }
     res.setCookie(REFRESH_COOKIE, result.refreshToken, COOKIE_OPTIONS);
     return { accessToken: result.accessToken, isNewUser: result.isNewUser };
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Обновить accessToken по refresh cookie' })
+  @ApiOperation({
+    summary:
+      'Обновить accessToken по refresh cookie (web) или refreshToken из тела (X-Client: native)',
+  })
   @ApiCookieAuth(REFRESH_COOKIE)
-  @ApiResponse({ status: 200, description: '{ accessToken }' })
+  @ApiBody({ type: RefreshBody, required: false })
+  @ApiResponse({ status: 200, description: '{ accessToken, refreshToken? }' })
   @ApiResponse({ status: 401, description: 'Refresh token недействителен' })
   async refresh(
+    @Body() body: RefreshBody | undefined,
     @Req() req: CookieRequest,
     @Res({ passthrough: true }) res: CookieReply,
   ) {
-    const token = req.cookies?.[REFRESH_COOKIE];
+    const native = isNativeClient(req);
+    const bodyToken =
+      typeof body?.refreshToken === 'string' && body.refreshToken !== ''
+        ? body.refreshToken
+        : undefined;
+    const token = native ? bodyToken : req.cookies?.[REFRESH_COOKIE];
     if (!token) throw new UnauthorizedException('Refresh token не найден');
 
     const result = await this.auth.refresh(token);
+    if (native) {
+      // ротация: клиент обязан сохранить новый refreshToken
+      return {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      };
+    }
     res.setCookie(REFRESH_COOKIE, result.refreshToken, COOKIE_OPTIONS);
     return { accessToken: result.accessToken };
   }
@@ -130,10 +175,15 @@ export class AuthController {
   @ApiCookieAuth(REFRESH_COOKIE)
   @ApiResponse({ status: 200, description: 'Выход выполнен' })
   async logout(
+    @Body() body: RefreshBody | undefined,
     @Req() req: CookieRequest,
     @Res({ passthrough: true }) res: CookieReply,
   ) {
-    const token = req.cookies?.[REFRESH_COOKIE];
+    const bodyToken =
+      typeof body?.refreshToken === 'string' && body.refreshToken !== ''
+        ? body.refreshToken
+        : undefined;
+    const token = bodyToken ?? req.cookies?.[REFRESH_COOKIE];
     if (token) await this.auth.logout(token);
     res.clearCookie(REFRESH_COOKIE, { path: '/' });
     return { message: 'Выход выполнен' };
