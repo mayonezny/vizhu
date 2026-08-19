@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { createHash, randomBytes, randomInt } from 'crypto';
 import { SmsService } from '../sms/sms.service';
@@ -16,6 +16,8 @@ import { PhoneAccount } from '../users/entities/phone-account.entity';
 const OTP_TTL_MINUTES = 5;
 const OTP_ATTEMPTS_MAX = 5;
 const REFRESH_TTL_DAYS = 30;
+/** Сколько живёт СТАРЫЙ refresh-токен после ротации (см. refresh()). */
+const ROTATION_GRACE_MS = 60_000;
 const REFRESH_COOKIE = 'refresh_token';
 
 export { REFRESH_COOKIE };
@@ -120,7 +122,23 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token недействителен');
     }
 
-    await this.refreshTokenRepo.delete({ uuid: record.uuid });
+    // Ротация с grace-окном вместо мгновенного удаления: мобильный клиент
+    // может не успеть сохранить новый токен (приложение убили, сеть оборвалась
+    // после ответа) — тогда он повторно придёт со старым токеном и получит
+    // новую пару, а не вечный разлогин. Старый токен доживает ROTATION_GRACE_MS.
+    const graceDeadline = new Date(Date.now() + ROTATION_GRACE_MS);
+    if (record.expiresAt > graceDeadline) {
+      await this.refreshTokenRepo.update(
+        { uuid: record.uuid },
+        { expiresAt: graceDeadline },
+      );
+    }
+
+    // Заодно подчищаем протухшие токены аккаунта (в т.ч. отработавшие grace).
+    await this.refreshTokenRepo.delete({
+      phoneAccountId: record.phoneAccountId,
+      expiresAt: LessThan(new Date()),
+    });
 
     const newRefreshToken = await this.createRefreshToken(
       record.phoneAccountId,
