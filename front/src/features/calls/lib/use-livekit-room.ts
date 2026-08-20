@@ -5,7 +5,9 @@ import {
   RoomEvent,
   Track,
   VideoPresets,
+  type ConnectionQuality,
   type ConnectionState as LKConnectionState,
+  type Participant,
   type RemoteParticipant,
   type RemoteTrack,
   type VideoCaptureOptions,
@@ -44,6 +46,8 @@ export type LiveKitRoomState = {
   remoteVideoActive: boolean;
   canUseCamera: boolean;
   facingMode: FacingMode;
+  /** Идёт перезапуск камеры: <video> пустой, показывать его нельзя. */
+  cameraSwitching: boolean;
   toggleMic: () => void;
   toggleCamera: () => void;
   switchCamera: () => void;
@@ -104,7 +108,7 @@ export const useLiveKitRoom = ({
         dynacast: false,
         // Захватываем камеру в 720p (по умолчанию — задняя).
         videoCaptureDefaults: {
-          resolution: VideoPresets.h720.resolution,
+          resolution: VideoPresets.h1080.resolution,
           facingMode: 'environment',
         },
         // Один поток, весь аплинк-битрейт в него. Меньше слоёв = меньше нагрузка
@@ -112,10 +116,13 @@ export const useLiveKitRoom = ({
         publishDefaults: {
           simulcast: false,
           videoEncoding: {
-            maxBitrate: 3_000_000,
+            maxBitrate: 4_500_000,
             maxFramerate: 30,
           },
-          degradationPreference: 'maintain-framerate',
+          // Волонтёр читает незрячему мелкий текст — ценники, инструкции,
+          // показания счётчиков. При нехватке полосы жертвуем плавностью,
+          // а не чёткостью: LiveKit срежет fps, оставив 1080p.
+          degradationPreference: 'maintain-resolution',
           red: true,
           dtx: true,
         },
@@ -129,6 +136,7 @@ export const useLiveKitRoom = ({
   const [remoteConnected, setRemoteConnected] = useState(false);
   const [remoteVideoActive, setRemoteVideoActive] = useState(false);
   const [facingMode, setFacingMode] = useState<FacingMode>('environment');
+  const [cameraSwitching, setCameraSwitching] = useState(false);
 
   const remoteVideoElRef = useRef<HTMLVideoElement | null>(null);
   const localVideoElRef = useRef<HTMLVideoElement | null>(null);
@@ -152,7 +160,7 @@ export const useLiveKitRoom = ({
   }, []);
 
   const captureOptions = (): VideoCaptureOptions => ({
-    resolution: VideoPresets.h720.resolution,
+    resolution: VideoPresets.h1080.resolution,
     facingMode: facingModeRef.current,
   });
 
@@ -224,6 +232,14 @@ export const useLiveKitRoom = ({
       lkLog('state:', state);
     };
 
+    // Оценка канала от SFU. Падение до poor = сеть не тянет; в логе видно,
+    // когда именно началась деградация и чем это кончилось.
+    const handleQualityChanged = (quality: ConnectionQuality, participant: Participant) => {
+      if (participant.isLocal) {
+        lkLog('quality:', quality);
+      }
+    };
+
     const handleReconnecting = () => {
       setConnectionState('reconnecting');
       announceRouteChange('Связь прерывается, переподключаемся…');
@@ -287,6 +303,7 @@ export const useLiveKitRoom = ({
     room
       .on(RoomEvent.Connected, handleConnected)
       .on(RoomEvent.ConnectionStateChanged, handleConnectionStateChanged)
+      .on(RoomEvent.ConnectionQualityChanged, handleQualityChanged)
       .on(RoomEvent.Reconnecting, handleReconnecting)
       .on(RoomEvent.Reconnected, handleReconnected)
       .on(RoomEvent.Disconnected, handleRoomDisconnected)
@@ -338,6 +355,7 @@ export const useLiveKitRoom = ({
       room
         .off(RoomEvent.Connected, handleConnected)
         .off(RoomEvent.ConnectionStateChanged, handleConnectionStateChanged)
+        .off(RoomEvent.ConnectionQualityChanged, handleQualityChanged)
         .off(RoomEvent.Reconnecting, handleReconnecting)
         .off(RoomEvent.Reconnected, handleReconnected)
         .off(RoomEvent.Disconnected, handleRoomDisconnected)
@@ -389,20 +407,55 @@ export const useLiveKitRoom = ({
   }, [room, canUseCamera, attachLocalVideo]);
 
   const switchCamera = useCallback(() => {
-    if (!canUseCamera) {
+    if (!canUseCamera || cameraSwitching) {
+      return;
+    }
+    const track = room.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
+    if (!track) {
       return;
     }
     const nextFacing: FacingMode = facingModeRef.current === 'environment' ? 'user' : 'environment';
-    facingModeRef.current = nextFacing;
-    setFacingMode(nextFacing);
-    const track = room.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
-    if (track) {
-      void track
-        .restartTrack({ resolution: VideoPresets.h720.resolution, facingMode: nextFacing })
-        .then(() => attachLocalVideo());
-    }
-    announceRouteChange(nextFacing === 'environment' ? 'Задняя камера' : 'Передняя камера');
-  }, [room, canUseCamera, attachLocalVideo]);
+
+    // Каскад constraints: фронтальные модули часто не отдают 1920x1080 (особенно
+    // в WebView), и жёсткое требование 1080p роняло весь перезапуск — камера
+    // просто не переключалась. Спускаемся до 720p, затем вовсе снимаем
+    // требование к разрешению: лучше передняя камера в 480p, чем никакой.
+    const attempts: Array<VideoCaptureOptions> = [
+      { resolution: VideoPresets.h1080.resolution, facingMode: nextFacing },
+      { resolution: VideoPresets.h720.resolution, facingMode: nextFacing },
+      { facingMode: nextFacing },
+    ];
+
+    const tryNext = async (index: number): Promise<void> => {
+      try {
+        await track.restartTrack(attempts[index]);
+      } catch (error) {
+        if (index + 1 < attempts.length) {
+          lkLog('camera switch attempt failed, retrying with lower constraints:', error);
+          await tryNext(index + 1);
+          return;
+        }
+        throw error;
+      }
+    };
+
+    setCameraSwitching(true);
+    void tryNext(0)
+      .then(() => {
+        // Состояние меняем только по факту успеха: раньше оно обновлялось
+        // заранее, и после неудачи следующее нажатие «переключало обратно»,
+        // фактически не делая ничего.
+        facingModeRef.current = nextFacing;
+        setFacingMode(nextFacing);
+        attachLocalVideo();
+        announceRouteChange(nextFacing === 'environment' ? 'Задняя камера' : 'Передняя камера');
+      })
+      .catch((error: unknown) => {
+        console.error('[livekit] не удалось переключить камеру', error);
+        announceRouteChange('Не удалось переключить камеру');
+      })
+      .finally(() => setCameraSwitching(false));
+  }, [room, canUseCamera, cameraSwitching, attachLocalVideo]);
 
   const leave = useCallback(() => {
     void runExclusive(() => room.disconnect());
@@ -416,6 +469,7 @@ export const useLiveKitRoom = ({
     remoteVideoActive,
     canUseCamera,
     facingMode,
+    cameraSwitching,
     toggleMic,
     toggleCamera,
     switchCamera,

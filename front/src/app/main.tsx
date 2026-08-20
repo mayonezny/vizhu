@@ -48,6 +48,17 @@ if (import.meta.env.PROD && !isNativePlatform() && 'serviceWorker' in navigator)
 // Порядок важен: сначала нативные реализации портов + rehydrate персистов
 // (на Capacitor), потом восстановление access-токена тихим /auth/refresh —
 // иначе гарды роутера и первые запросы уйдут без авторизации.
+/**
+ * Сколько ждём тихий /auth/refresh, прежде чем показать интерфейс.
+ * Всё это время пользователь смотрит на заставку, поэтому ждать до полного
+ * таймаута axios (30с) нельзя. Не успели — стартуем как есть: флаг isAuthed
+ * поднят из персиста, а токен дотянет интерсептор на первом же 401.
+ */
+const AUTH_BOOTSTRAP_TIMEOUT_MS = 4000;
+
+const withTimeout = (task: Promise<unknown>, ms: number): Promise<unknown> =>
+  Promise.race([task, new Promise((resolve) => setTimeout(resolve, ms))]);
+
 const bootstrap = async () => {
   // Ошибки не глотаем молча: если нативные реализации не поднялись, приложение
   // тихо деградирует до web-портов (secureStorage в памяти → слетает сессия),
@@ -55,9 +66,12 @@ const bootstrap = async () => {
   await initPlatform().catch((error: unknown) => {
     console.error('[platform] Не удалось инициализировать нативные порты', error);
   });
-  await bootstrapAuth().catch((error: unknown) => {
-    console.error('[auth] bootstrap упал', error);
-  });
+  await withTimeout(
+    bootstrapAuth().catch((error: unknown) => {
+      console.error('[auth] bootstrap упал', error);
+    }),
+    AUTH_BOOTSTRAP_TIMEOUT_MS,
+  );
   startApp();
 };
 

@@ -62,6 +62,8 @@ export const CallRoomStage = ({ match, role }: CallRoomStageProps) => {
     remoteConnected,
     remoteVideoActive,
     canUseCamera,
+    facingMode,
+    cameraSwitching,
     toggleMic,
     toggleCamera,
     switchCamera,
@@ -130,10 +132,12 @@ export const CallRoomStage = ({ match, role }: CallRoomStageProps) => {
         className="call-room__self"
         aria-label={`Вы. ${micEnabled ? 'Микрофон включён' : 'Микрофон выключен'}`}
       >
-        {isBlind && cameraEnabled ? (
+        {isBlind && cameraEnabled && !cameraSwitching ? (
           <video
             ref={setLocalVideoEl}
-            className="call-room__self-video"
+            className={`call-room__self-video${
+              facingMode === 'user' ? ' call-room__self-video--mirrored' : ''
+            }`}
             autoPlay
             playsInline
             muted
@@ -194,7 +198,7 @@ export const CallRoomStage = ({ match, role }: CallRoomStageProps) => {
             type="button"
             className="call-room__ctrl"
             onClick={switchCamera}
-            disabled={!cameraEnabled}
+            disabled={!cameraEnabled || cameraSwitching}
             aria-label="Переключить камеру (передняя или задняя)"
           >
             <SwitchCamera size={26} aria-hidden="true" />
