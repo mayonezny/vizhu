@@ -1,8 +1,9 @@
 import { create, type StateCreator } from 'zustand';
-import { devtools, persist, type PersistOptions } from 'zustand/middleware';
+import { createJSONStorage, devtools, persist, type PersistOptions } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 import { env } from '@/shared/config';
+import { persistStateStorage } from '@/shared/platform';
 
 /**
  * Тип creator-функции при обёртке через immer.
@@ -38,7 +39,9 @@ export function createStore<T extends object>(storeName: string, creator: ImmerC
 // ─── createPersistedStore ─────────────────────────────────────────────────────
 
 /**
- * Аналог `createStore`, но также сохраняет состояние в `localStorage` (или кастомное хранилище).
+ * Аналог `createStore`, но также сохраняет состояние через платформенное
+ * хранилище (`platform.stateStorage`: web — localStorage, Capacitor —
+ * Preferences). Можно переопределить через `persistOptions.storage`.
  *
  * @example
  * ```ts
@@ -58,9 +61,15 @@ export function createPersistedStore<T extends object>(
   persistOptions: PersistOptions<T>,
 ) {
   return create<T>()(
-    devtools(persist(immer(creator), persistOptions), {
-      name: storeName,
-      enabled: env.enableDevtools,
-    }),
+    devtools(
+      persist(immer(creator), {
+        storage: createJSONStorage<T>(() => persistStateStorage),
+        ...persistOptions,
+      }),
+      {
+        name: storeName,
+        enabled: env.enableDevtools,
+      },
+    ),
   );
 }

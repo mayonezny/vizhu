@@ -194,3 +194,13 @@ svg {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ── Нативное превью камеры (Capacitor, @capgo/camera-preview) ──────────────
+   Превью рисуется ПОЗАДИ WebView (toBack) — на время его работы весь фон
+   страницы должен быть прозрачным, иначе камеру не видно. Класс вешает
+   нативная реализация photoCamera (shared/platform/native/photo-camera.ts). */
+body.camera-preview-active,
+body.camera-preview-active #root,
+body.camera-preview-active .dialog-page {
+  background: transparent !important;
+}

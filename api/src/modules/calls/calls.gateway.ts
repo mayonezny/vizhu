@@ -67,6 +67,19 @@ export class CallsGateway
       this.matching.volunteerOnline(user.id); // без socketId
   }
 
+  @SubscribeMessage('volunteer:offline')
+  onVolunteerOffline(@ConnectedSocket() client: Socket): void {
+    const user = this.getUser(client);
+    if (user?.role === UserRole.VOLUNTEER)
+      this.matching.volunteerOffline(user.id);
+  }
+
+  @SubscribeMessage('call:resume')
+  onResume(@ConnectedSocket() client: Socket): void {
+    const user = this.getUser(client);
+    if (user) this.matching.resume(user.id);
+  }
+
   @SubscribeMessage('call:request')
   onRequest(@ConnectedSocket() client: Socket): void {
     const user = this.getUser(client);

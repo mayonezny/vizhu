@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router';
 
 import { registrationApi, useRegistrationStore } from '@/features/registration';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
+import { platform } from '@/shared/platform';
+import type { PermissionKind as PermKey } from '@/shared/platform';
 import { Button } from '@/shared/ui/Button';
 import { RoundButton } from '@/shared/ui/RoundButton';
 
 import './RegistrationPermissionsPage.scss';
-
-type PermKey = 'camera' | 'microphone' | 'geolocation' | 'notifications';
 
 type Permission = {
   key: PermKey;
@@ -46,32 +46,8 @@ const PERMISSIONS: Permission[] = [
 ];
 
 const requestPermissions = async (perms: Record<PermKey, boolean>) => {
-  const requests: Promise<unknown>[] = [];
-
-  if (perms.camera || perms.microphone) {
-    requests.push(
-      navigator.mediaDevices
-        .getUserMedia({ video: perms.camera, audio: perms.microphone })
-        .catch(() => null),
-    );
-  }
-
-  if (perms.geolocation) {
-    requests.push(
-      new Promise<void>((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          () => resolve(),
-          () => resolve(),
-        );
-      }),
-    );
-  }
-
-  if (perms.notifications && 'Notification' in window) {
-    requests.push(Notification.requestPermission().catch(() => null));
-  }
-
-  await Promise.allSettled(requests);
+  const kinds = (Object.keys(perms) as PermKey[]).filter((key) => perms[key]);
+  await platform.permissions.requestMany(kinds);
 };
 
 export const RegistrationPermissionsPage = () => {

@@ -1,7 +1,14 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 
 import { env } from '@/shared/config';
+import { STORAGE_KEYS } from '@/shared/config/storage-keys';
+import { isNativePlatform, platform } from '@/shared/platform';
 
+import {
+  clearStoredRefreshToken,
+  getStoredRefreshToken,
+  storeRefreshToken,
+} from './refresh-token-store';
 import { getAccessToken, setAccessToken } from './token-store';
 
 export const api = axios.create({
@@ -24,10 +31,44 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Нативный клиент (Capacitor): бэкенд отдаёт refresh-токен в теле,
+    // а не в куке (см. refresh-token-store.ts).
+    if (isNativePlatform()) {
+      config.headers['X-Client'] = 'native';
+    }
     return config;
   },
   (error: unknown) => Promise.reject(error),
 );
+
+/**
+ * Обновить access-токен. Web — по httpOnly-куке; натив — по refresh-токену
+ * из защищённого хранилища (с ротацией: новый токен из ответа сохраняем).
+ * Используется интерсептором 401 и бутстрапом сессии.
+ */
+export const refreshSession = async (): Promise<string> => {
+  let body: { refreshToken: string } | undefined;
+  if (isNativePlatform()) {
+    const stored = await getStoredRefreshToken();
+    if (!stored) {
+      console.warn('[auth] refresh: в защищённом хранилище нет refresh-токена');
+    }
+    body = { refreshToken: stored ?? '' };
+  }
+  const { data } = await api.post<{ accessToken: string; refreshToken?: string }>(
+    '/auth/refresh',
+    body,
+  );
+  // Сначала — долговременная запись нового refresh-токена (ротация!),
+  // и только потом всё остальное: чем меньше окно между ответом сервера
+  // и сохранением, тем меньше шанс потерять сессию при убийстве приложения.
+  if (data.refreshToken) {
+    await storeRefreshToken(data.refreshToken);
+  }
+  // Access-токен живёт только в памяти — в персист ничего писать не нужно.
+  setAccessToken(data.accessToken);
+  return data.accessToken;
+};
 
 api.interceptors.response.use(
   (response) => response,
@@ -58,16 +99,7 @@ api.interceptors.response.use(
 
       isRefreshing = true;
       try {
-        const { data } = await api.post<{ accessToken: string }>('/auth/refresh');
-        const newToken = data.accessToken;
-        setAccessToken(newToken);
-
-        const raw = localStorage.getItem('vizhu-auth');
-        if (raw) {
-          const parsed = JSON.parse(raw) as { state: Record<string, unknown> };
-          parsed.state.accessToken = newToken;
-          localStorage.setItem('vizhu-auth', JSON.stringify(parsed));
-        }
+        const newToken = await refreshSession();
 
         drainQueue(newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -75,8 +107,14 @@ api.interceptors.response.use(
       } catch (refreshError) {
         drainQueue(null);
         setAccessToken(null);
-        localStorage.removeItem('vizhu-auth');
-        window.location.replace('/auth');
+        // Сессия умерла: чистим refresh-токен и персист авторизации
+        // (на нативе — асинхронно, поэтому редирект после завершения).
+        void Promise.allSettled([
+          clearStoredRefreshToken(),
+          Promise.resolve(platform.stateStorage.removeItem(STORAGE_KEYS.AUTH)),
+        ]).then(() => {
+          window.location.replace('/auth');
+        });
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

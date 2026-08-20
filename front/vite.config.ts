@@ -20,6 +20,10 @@ export default defineConfig(async ({ mode }) => {
   const pwaPlugin = VitePWA({
     registerType: 'autoUpdate',
 
+    // Регистрация SW — вручную в main.tsx (virtual:pwa-register), чтобы
+    // пропустить её внутри Capacitor-оболочки.
+    injectRegister: false,
+
     includeAssets: ['favicon.ico', 'icons/*.png'],
 
     manifest: false,

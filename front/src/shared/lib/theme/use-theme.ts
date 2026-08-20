@@ -10,7 +10,7 @@ interface ThemeState {
   toggle: () => void;
 }
 
-const useThemeStore = createPersistedStore<ThemeState>(
+export const useThemeStore = createPersistedStore<ThemeState>(
   'Theme',
   (set) => ({
     mode: 'system',

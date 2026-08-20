@@ -21,6 +21,7 @@ import {
   useSttMutation,
 } from '@/features/ai-dialog';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
+import { platform } from '@/shared/platform';
 import { RoundButton } from '@/shared/ui/RoundButton';
 import { VoiceRecordOverlay } from '@/widgets/VoiceRecordOverlay';
 
@@ -38,6 +39,9 @@ export const DialogPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = (searchParams.get('mode') ?? 'describe') as DialogMode;
+  // Нативная оболочка (Capacitor): превью камеры рисуется позади WebView
+  // (@capgo/camera-preview), наш UI остаётся сверху — getUserMedia не нужен.
+  const nativeCamera = platform.photoCamera.mode === 'native-preview';
 
   const [phase, setPhase] = useState<Phase>('camera');
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -74,9 +78,9 @@ export const DialogPage = () => {
     [photoUrl],
   );
 
-  // Start camera when in camera phase
+  // Start camera when in camera phase (только inline-режим — web)
   useEffect(() => {
-    if (phase !== 'camera') {
+    if (phase !== 'camera' || nativeCamera) {
       return;
     }
     let cancelled = false;
@@ -130,10 +134,10 @@ export const DialogPage = () => {
           }
           // getUserMedia на Android часто выбирает ультраширокий объектив (0.6x).
           // Зум ~1.3x приближает картинку к основному объективу (1x в нативной камере).
-          if (caps.zoom) {
-            const targetZoom = Math.min(1.3, caps.zoom.max);
-            advanced.push({ zoom: targetZoom });
-          }
+          // if (caps.zoom) {
+          //   const targetZoom = Math.min(1.3, caps.zoom.max);
+          //   advanced.push({ zoom: targetZoom });
+          // }
 
           if (advanced.length > 0) {
             await track
@@ -156,11 +160,15 @@ export const DialogPage = () => {
         clearTimeout(countdownTimerRef.current);
       }
     };
-  }, [phase]);
+  }, [phase, nativeCamera]);
 
   // Wait for video to be ready, then start 3s countdown
   useEffect(() => {
     if (phase !== 'camera' || cameraErr) {
+      return;
+    }
+    if (nativeCamera) {
+      // готовность озвучивает эффект нативного превью ниже
       return;
     }
     const video = videoRef.current;
@@ -184,7 +192,36 @@ export const DialogPage = () => {
         clearTimeout(countdownTimerRef.current);
       }
     };
-  }, [phase, cameraErr, mode]);
+  }, [phase, cameraErr, mode, nativeCamera]);
+
+  // Нативное превью: запускаем при входе в фазу камеры, гасим при выходе
+  // (переход в processing/chat, уход со страницы).
+  useEffect(() => {
+    if (phase !== 'camera' || !nativeCamera) {
+      return;
+    }
+    let cancelled = false;
+    setCameraErr(null);
+
+    platform.photoCamera
+      .startPreview()
+      .then(() => {
+        if (!cancelled) {
+          announceRouteChange(`${MODE_LABELS[mode]}. Камера готова. Нажмите кнопку для снимка.`);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCameraErr('Нет доступа к камере. Проверьте настройки приложения.');
+          announceRouteChange('Нет доступа к камере.');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      void platform.photoCamera.stopPreview();
+    };
+  }, [phase, nativeCamera, mode]);
 
   // Countdown tick
   useEffect(() => {
@@ -309,6 +346,29 @@ export const DialogPage = () => {
     void runAnalysis(file);
   }, [runAnalysis]);
 
+  // Нативная съёмка: кадр с активного нативного превью.
+  const handleNativeCapture = useCallback(async () => {
+    try {
+      const photo = await platform.photoCamera.capture();
+      if (!photo) {
+        return;
+      }
+      setPhotoUrl(URL.createObjectURL(photo.file));
+      void runAnalysis(photo.file);
+    } catch {
+      announceRouteChange('Не удалось сделать снимок. Попробуйте ещё раз.');
+    }
+  }, [runAnalysis]);
+
+  const handleNativeGalleryPick = useCallback(async () => {
+    const photo = await platform.photoCamera.pickFromGallery().catch(() => null);
+    if (!photo) {
+      return;
+    }
+    setPhotoUrl(URL.createObjectURL(photo.file));
+    void runAnalysis(photo.file);
+  }, [runAnalysis]);
+
   const handleGalleryPick = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -396,7 +456,7 @@ export const DialogPage = () => {
   if (phase === 'camera') {
     return (
       <main id="main-content" className="dialog-page" tabIndex={-1} aria-label={MODE_LABELS[mode]}>
-        {!cameraErr && (
+        {!cameraErr && !nativeCamera && (
           <video
             ref={videoRef}
             autoPlay
@@ -424,22 +484,24 @@ export const DialogPage = () => {
           </div>
         )}
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="dialog-page__file-input"
-          onChange={handleGalleryPick}
-          aria-hidden="true"
-          tabIndex={-1}
-        />
+        {!nativeCamera && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="dialog-page__file-input"
+            onChange={handleGalleryPick}
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+        )}
 
         <div className="dialog-page__controls" role="group" aria-label="Управление камерой">
           <RoundButton
             className="dialog-page__btn-capture"
             icon={<Camera size={28} aria-hidden="true" />}
             aria-label="Сделать снимок"
-            onClick={() => void doCapture()}
+            onClick={() => void (nativeCamera ? handleNativeCapture() : doCapture())}
             disabled={Boolean(cameraErr)}
           />
           <RoundButton
@@ -452,7 +514,9 @@ export const DialogPage = () => {
             className="dialog-page__btn-gallery"
             icon={<ImageIcon size={20} aria-hidden="true" />}
             aria-label="Выбрать фото из галереи"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() =>
+              nativeCamera ? void handleNativeGalleryPick() : fileInputRef.current?.click()
+            }
           />
         </div>
       </main>

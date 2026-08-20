@@ -1,2 +1,2 @@
-export { api } from './axios';
+export { api, refreshSession } from './axios';
 export { aiApi } from './ai';

@@ -18,12 +18,14 @@ import { useNavigate } from 'react-router';
 import { useAuthStore } from '@/features/auth';
 import { useProfile } from '@/features/profile';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
+import { platform } from '@/shared/platform';
+import type {
+  PermissionKind as PermKey,
+  PlatformPermissionState as PermState,
+} from '@/shared/platform';
 import { Button } from '@/shared/ui/Button';
 
 import './AccountPage.scss';
-
-type PermKey = 'camera' | 'microphone' | 'geolocation' | 'notifications';
-type PermState = 'granted' | 'denied' | 'prompt' | 'unsupported';
 
 type Permission = {
   key: PermKey;
@@ -66,58 +68,6 @@ const STATUS_LABEL: Record<PermState, string> = {
   unsupported: 'Недоступно',
 };
 
-/** Читает текущее состояние разрешения через Permissions API (где поддерживается). */
-const readState = async (key: PermKey): Promise<PermState> => {
-  try {
-    if (key === 'notifications') {
-      if (!('Notification' in window)) {
-        return 'unsupported';
-      }
-      return Notification.permission === 'default' ? 'prompt' : Notification.permission;
-    }
-
-    if (!navigator.permissions?.query) {
-      return 'prompt';
-    }
-
-    const name = key as PermissionName;
-    const status = await navigator.permissions.query({ name });
-    return status.state as PermState;
-  } catch {
-    // Часть браузеров не знает имя 'camera'/'microphone' — считаем, что можно запросить
-    return 'prompt';
-  }
-};
-
-/** Инициирует запрос разрешения у браузера. Тихо игнорирует отказ. */
-const requestPermission = async (key: PermKey): Promise<void> => {
-  try {
-    if (key === 'camera' || key === 'microphone') {
-      const stream = await navigator.mediaDevices.getUserMedia(
-        key === 'camera' ? { video: true } : { audio: true },
-      );
-      stream.getTracks().forEach((track) => track.stop());
-      return;
-    }
-
-    if (key === 'geolocation') {
-      await new Promise<void>((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          () => resolve(),
-          () => resolve(),
-        );
-      });
-      return;
-    }
-
-    if (key === 'notifications' && 'Notification' in window) {
-      await Notification.requestPermission();
-    }
-  } catch {
-    // отказ или недоступность — состояние перечитаем после
-  }
-};
-
 const ROLE_LABEL: Record<string, string> = {
   volunteer: 'Волонтёр',
   blind: 'Незрячий',
@@ -154,7 +104,7 @@ export const AccountPage = () => {
 
   const refresh = useCallback(async () => {
     const entries = await Promise.all(
-      PERMISSIONS.map(async ({ key }) => [key, await readState(key)] as const),
+      PERMISSIONS.map(async ({ key }) => [key, await platform.permissions.check(key)] as const),
     );
     setStates(Object.fromEntries(entries) as Record<PermKey, PermState>);
   }, []);
@@ -167,7 +117,7 @@ export const AccountPage = () => {
   const handleRequest = async (key: PermKey) => {
     setPending(key);
     try {
-      await requestPermission(key);
+      await platform.permissions.request(key);
       await refresh();
     } finally {
       setPending(null);

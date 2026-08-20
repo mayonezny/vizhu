@@ -54,66 +54,74 @@ const requirePhone = () => {
   return null;
 };
 
-export const router = createBrowserRouter([
-  {
-    element: <RootLayout />,
-    children: [
-      {
-        element: <PageLayout />,
-        loader: requireAuth,
-        children: [
-          { index: true, element: <HomePage />, handle: { title: 'Главная' } },
-          {
-            path: 'history',
-            element: <HistoryPage />,
-            handle: { title: 'История', headerVariant: 'back' },
-          },
-          {
-            path: 'help',
-            element: <HelpPage />,
-            handle: { title: 'Помощь', headerVariant: 'back' },
-          },
-          {
-            path: 'volunteer',
-            element: <VolunteerPage />,
-            handle: { title: 'Кабинет волонтёра', headerVariant: 'back' },
-          },
-          {
-            path: 'profile',
-            element: <AccountPage />,
-            handle: { title: 'Профиль', headerVariant: 'back' },
-          },
-        ],
-      },
-      {
-        path: 'auth',
-        loader: redirectIfAuthed,
-        children: [
-          { index: true, element: <AuthPage /> },
-          { path: 'phone', element: <PhoneAuthPage /> },
-          { path: 'code', element: <CallCodePage />, loader: requirePhone },
-        ],
-      },
-      {
-        path: 'registration',
-        loader: requireAuthOnly,
-        children: [
-          { path: 'name', element: <RegistrationNamePage /> },
-          { path: 'vision', element: <RegistrationVisionPage /> },
-          { path: 'ipra', element: <RegistrationIpraPage /> },
-          { path: 'permissions', element: <RegistrationPermissionsPage /> },
-          { path: 'welcome', element: <WelcomePage /> },
-        ],
-      },
-      {
-        element: <OnboardingLayout />,
-        children: [{ path: 'onboarding', element: <OnboardingPage /> }],
-      },
-      { path: 'dialog', element: <DialogPage />, loader: requireAuth },
-      { path: 'call/waiting', element: <CallWaitingPage />, loader: requireAuth },
-      { path: 'call/room', element: <CallRoomPage />, loader: requireAuth },
-      { path: 'history/:id', element: <HistoryDetailPage />, loader: requireAuth },
-      { path: '*', element: <NotFoundPage /> },
-    ],
-  },
-]);
+/**
+ * Фабрика вместо готового инстанса: createBrowserRouter запускает лоадеры
+ * (гарды) СРАЗУ при создании. Если создать роутер на импорте модуля, гарды
+ * отработают до platform-init/bootstrapAuth (рехидрейт Preferences + тихий
+ * refresh) и увидят isAuthed=false — залогиненный пользователь получит экран
+ * входа. Поэтому роутер создаётся в main.tsx только после бутстрапа.
+ */
+export const createAppRouter = () =>
+  createBrowserRouter([
+    {
+      element: <RootLayout />,
+      children: [
+        {
+          element: <PageLayout />,
+          loader: requireAuth,
+          children: [
+            { index: true, element: <HomePage />, handle: { title: 'Главная' } },
+            {
+              path: 'history',
+              element: <HistoryPage />,
+              handle: { title: 'История', headerVariant: 'back' },
+            },
+            {
+              path: 'help',
+              element: <HelpPage />,
+              handle: { title: 'Помощь', headerVariant: 'back' },
+            },
+            {
+              path: 'volunteer',
+              element: <VolunteerPage />,
+              handle: { title: 'Кабинет волонтёра', headerVariant: 'back' },
+            },
+            {
+              path: 'profile',
+              element: <AccountPage />,
+              handle: { title: 'Профиль', headerVariant: 'back' },
+            },
+          ],
+        },
+        {
+          path: 'auth',
+          loader: redirectIfAuthed,
+          children: [
+            { index: true, element: <AuthPage /> },
+            { path: 'phone', element: <PhoneAuthPage /> },
+            { path: 'code', element: <CallCodePage />, loader: requirePhone },
+          ],
+        },
+        {
+          path: 'registration',
+          loader: requireAuthOnly,
+          children: [
+            { path: 'name', element: <RegistrationNamePage /> },
+            { path: 'vision', element: <RegistrationVisionPage /> },
+            { path: 'ipra', element: <RegistrationIpraPage /> },
+            { path: 'permissions', element: <RegistrationPermissionsPage /> },
+            { path: 'welcome', element: <WelcomePage /> },
+          ],
+        },
+        {
+          element: <OnboardingLayout />,
+          children: [{ path: 'onboarding', element: <OnboardingPage /> }],
+        },
+        { path: 'dialog', element: <DialogPage />, loader: requireAuth },
+        { path: 'call/waiting', element: <CallWaitingPage />, loader: requireAuth },
+        { path: 'call/room', element: <CallRoomPage />, loader: requireAuth },
+        { path: 'history/:id', element: <HistoryDetailPage />, loader: requireAuth },
+        { path: '*', element: <NotFoundPage /> },
+      ],
+    },
+  ]);

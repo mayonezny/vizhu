@@ -57,9 +57,39 @@ export class MatchingService {
       this.graceTimers.delete(userId);
       this.logger.log(`reconnected within grace: ${userId}`);
     }
-    // пока отваливался — могли свести в пару; передоставляем матч на свежий сокет
+    // ВАЖНО: матч здесь НЕ передоставляем. Обработчик коннекта срабатывает
+    // раньше, чем придут call:request / volunteer:online, поэтому безусловная
+    // передоставка отправляла юзеру матч ПРОШЛОГО звонка — незрячий уезжал в
+    // старую (уже закрытую) комнату, а волонтёра сводило в новую: стороны
+    // оказывались в разных комнатах. Теперь фронт сам просит call:resume,
+    // но только когда он действительно посреди активного звонка (см. §6a).
+  }
+
+  /** Фронт посреди активного звонка переподключил сокет и просит матч заново. */
+  resume(userId: string) {
     const match = this.pendingMatch.get(userId);
-    if (match) this.server.to(socketId).emit('call:matched', match);
+    if (match) {
+      this.emitToUser(userId, 'call:matched', match);
+      this.logger.log(`match redelivered to ${userId} (${match.room})`);
+    }
+  }
+
+  /** Волонтёр явно уходит с линии (кнопкой). Сокет он порвёт следом сам. */
+  volunteerOffline(volunteerId: string) {
+    this.available.delete(volunteerId);
+    this.pendingMatch.delete(volunteerId);
+    // Если он сейчас в фазе дозвона — вернуть запрос незрячего в очередь.
+    for (const ring of [...this.ringing.values()]) {
+      if (ring.volunteerId === volunteerId) {
+        clearTimeout(ring.timer);
+        this.ringing.delete(ring.requestId);
+        this.retry({
+          requestId: ring.requestId,
+          blindUserId: ring.blindUserId,
+        });
+      }
+    }
+    this.logger.log(`volunteer offline: ${volunteerId}`);
   }
 
   /** Сокет отвалился. НЕ чистим сразу — ждём реконнект в течение grace. */
@@ -75,6 +105,7 @@ export class MatchingService {
     this.graceTimers.delete(userId);
     this.online.delete(userId);
     this.available.delete(userId);
+    this.pendingMatch.delete(userId);
     this.pending = this.pending.filter((p) => p.blindUserId !== userId);
     for (const ring of [...this.ringing.values()]) {
       if (ring.blindUserId === userId) {
@@ -96,12 +127,17 @@ export class MatchingService {
   }
 
   volunteerOnline(volunteerId: string) {
+    // Вернулся на линию = прошлый звонок закончен, матч больше не передоставляем.
+    this.pendingMatch.delete(volunteerId);
     this.available.add(volunteerId);
     this.logger.log(`volunteer online: ${volunteerId}`);
     this.drainQueue();
   }
 
   requestHelp(blindUserId: string) {
+    // Новый запрос помощи = прошлый звонок закончен: старый матч гасим,
+    // чтобы его нельзя было передоставить через call:resume.
+    this.pendingMatch.delete(blindUserId);
     // не плодим дубли (важно: на реконнекте фронт может повторно прислать call:request)
     if (this.pending.some((p) => p.blindUserId === blindUserId)) return;
     if ([...this.ringing.values()].some((r) => r.blindUserId === blindUserId))
