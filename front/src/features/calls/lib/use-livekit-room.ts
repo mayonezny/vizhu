@@ -1,8 +1,12 @@
 import {
+  ConnectionError,
+  DisconnectReason,
   Room,
   RoomEvent,
   Track,
   VideoPresets,
+  type ConnectionState as LKConnectionState,
+  type RemoteParticipant,
   type RemoteTrack,
   type VideoCaptureOptions,
 } from 'livekit-client';
@@ -13,7 +17,12 @@ import { announceRouteChange } from '@/shared/lib/a11y/announcer';
 
 import type { MatchInfo } from '../model/types';
 
-export type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+export type ConnectionState =
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'disconnected'
+  | 'failed';
 
 /** Причина завершения: сам положил трубку / собеседник ушёл / комната закрылась. */
 export type EndReason = 'self' | 'peer' | 'closed';
@@ -44,13 +53,40 @@ export type LiveKitRoomState = {
 };
 
 /**
+ * Диагностика звонка. В нативной сборке DevTools под рукой не всегда, и
+ * `console.*` — единственный способ увидеть в logcat, на каком шаге встало
+ * соединение. Правило no-console запрещает info — здесь осознанное исключение
+ * на один хелпер, чтобы не глушить правило по всему проекту.
+ */
+// eslint-disable-next-line no-console
+const lkLog = (...args: unknown[]): void => console.info('[livekit]', ...args);
+
+/** Человекочитаемая причина отключения — иначе в логах пусто и отладка вслепую. */
+const disconnectReasonName = (reason?: DisconnectReason): string =>
+  reason === undefined ? 'unknown' : (DisconnectReason[reason] ?? String(reason));
+
+const describeConnectError = (error: unknown): string => {
+  if (error instanceof ConnectionError) {
+    return `${error.reason !== undefined ? String(error.reason) : 'unknown'}: ${error.message}`;
+  }
+  return error instanceof Error ? error.message : String(error);
+};
+
+/**
  * Подключение к LiveKit-комнате и управление медиа по роли.
  *
  * - blind публикует камеру (по умолчанию задняя) + микрофон, подписывается на аудио волонтёра.
  * - volunteer публикует только микрофон, видит видео + слышит аудио незрячего.
  *
- * Качество: захват 720p + simulcast-слои до 720p, чтобы волонтёр получал резкую
+ * Качество: захват 720p + один поток без simulcast, чтобы волонтёр получал резкую
  * картинку. Медиа-реконнект держит сам LiveKit — мы озвучиваем смену состояния.
+ *
+ * Важно про жизненный цикл: `Room` создаётся один раз на монтирование, а
+ * connect/disconnect строго сериализованы (см. runExclusive). Иначе повторный
+ * прогон эффекта (StrictMode в деве, смена зависимостей, ремоунт страницы)
+ * даёт наложение «отключаемся» и «подключаемся» на одном инстансе: соединение
+ * зависает в connecting, а на сервере на миг появляется второй участник с тем
+ * же identity — из-за лимита участников второй стороне не остаётся места.
  */
 export const useLiveKitRoom = ({
   match,
@@ -104,6 +140,17 @@ export const useLiveKitRoom = ({
   const onDisconnectedRef = useRef(onDisconnected);
   onDisconnectedRef.current = onDisconnected;
 
+  /**
+   * Очередь операций над комнатой: connect и disconnect никогда не выполняются
+   * параллельно, а cleanup всегда дожидается завершения своего connect.
+   */
+  const chainRef = useRef<Promise<unknown>>(Promise.resolve());
+  const runExclusive = useCallback((task: () => Promise<void>): Promise<void> => {
+    const next = chainRef.current.then(task, task);
+    chainRef.current = next.catch(() => {});
+    return next;
+  }, []);
+
   const captureOptions = (): VideoCaptureOptions => ({
     resolution: VideoPresets.h720.resolution,
     facingMode: facingModeRef.current,
@@ -156,6 +203,47 @@ export const useLiveKitRoom = ({
       setRemoteConnected(room.remoteParticipants.size > 0);
     };
 
+    const handleConnected = () => {
+      if (cancelled) {
+        return;
+      }
+      everConnectedRef.current = true;
+      setConnectionState('connected');
+      lkLog('connected', {
+        room: room.name,
+        identity: room.localParticipant.identity,
+        peers: room.remoteParticipants.size,
+      });
+      syncRemote();
+    };
+
+    // Низкоуровневое состояние соединения: показывает, дошло ли дело до
+    // медиа-канала. Зависание на 'connecting' = не встал PeerConnection (ICE),
+    // а не сигналинг — по логу это видно сразу.
+    const handleConnectionStateChanged = (state: LKConnectionState) => {
+      lkLog('state:', state);
+    };
+
+    const handleReconnecting = () => {
+      setConnectionState('reconnecting');
+      announceRouteChange('Связь прерывается, переподключаемся…');
+    };
+
+    const handleReconnected = () => {
+      setConnectionState('connected');
+      announceRouteChange('Связь восстановлена');
+    };
+
+    const handleRoomDisconnected = (reason?: DisconnectReason) => {
+      console.warn('[livekit] disconnected:', disconnectReasonName(reason));
+      setConnectionState('disconnected');
+      // Уводим с экрана только если связь была установлена (естественное
+      // завершение). Провал первичного коннекта — остаёмся, показываем статус.
+      if (everConnectedRef.current) {
+        onDisconnectedRef.current?.('closed');
+      }
+    };
+
     const handleSubscribed = (track: RemoteTrack) => {
       if (track.kind === Track.Kind.Video) {
         remoteVideoTrackRef.current = track;
@@ -180,78 +268,104 @@ export const useLiveKitRoom = ({
       });
     };
 
-    room
-      .on(RoomEvent.Connected, () => {
-        if (cancelled) {
-          return;
-        }
-        everConnectedRef.current = true;
-        setConnectionState('connected');
-        syncRemote();
-      })
-      .on(RoomEvent.Reconnecting, () => {
-        setConnectionState('reconnecting');
-        announceRouteChange('Связь прерывается, переподключаемся…');
-      })
-      .on(RoomEvent.Reconnected, () => {
-        setConnectionState('connected');
-        announceRouteChange('Связь восстановлена');
-      })
-      .on(RoomEvent.Disconnected, () => {
+    const handleParticipantConnected = (participant: RemoteParticipant) => {
+      lkLog('peer joined:', participant.identity);
+      syncRemote();
+    };
+
+    const handleParticipantDisconnected = (participant: RemoteParticipant) => {
+      lkLog('peer left:', participant.identity);
+      syncRemote();
+      setRemoteVideoActive(false);
+      // Собеседник ушёл — на двоих комната опустела, звонок окончен.
+      if (room.remoteParticipants.size === 0) {
         setConnectionState('disconnected');
-        // Уводим с экрана только если связь была установлена (естественное
-        // завершение). Провал первичного коннекта — остаёмся, показываем статус.
-        if (everConnectedRef.current) {
-          onDisconnectedRef.current?.('closed');
-        }
-      })
+        onDisconnectedRef.current?.('peer');
+      }
+    };
+
+    room
+      .on(RoomEvent.Connected, handleConnected)
+      .on(RoomEvent.ConnectionStateChanged, handleConnectionStateChanged)
+      .on(RoomEvent.Reconnecting, handleReconnecting)
+      .on(RoomEvent.Reconnected, handleReconnected)
+      .on(RoomEvent.Disconnected, handleRoomDisconnected)
       .on(RoomEvent.TrackSubscribed, handleSubscribed)
       .on(RoomEvent.TrackUnsubscribed, handleUnsubscribed)
-      .on(RoomEvent.ParticipantConnected, syncRemote)
-      .on(RoomEvent.ParticipantDisconnected, () => {
-        syncRemote();
-        setRemoteVideoActive(false);
-        // Собеседник ушёл — на двоих комната опустела, звонок окончен.
-        if (room.remoteParticipants.size === 0) {
-          setConnectionState('disconnected');
-          onDisconnectedRef.current?.('peer');
-        }
-      })
+      .on(RoomEvent.ParticipantConnected, handleParticipantConnected)
+      .on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected)
       .on(RoomEvent.LocalTrackPublished, syncLocalState)
       .on(RoomEvent.LocalTrackUnpublished, syncLocalState)
       .on(RoomEvent.TrackMuted, syncLocalState)
       .on(RoomEvent.TrackUnmuted, syncLocalState);
 
-    const connect = async () => {
+    void runExclusive(async () => {
+      if (cancelled) {
+        return;
+      }
       try {
+        lkLog('connecting to', match.url, 'room', match.room, 'as', role);
         await room.connect(match.url, match.token);
         if (cancelled) {
           return;
         }
-        await room.localParticipant.setMicrophoneEnabled(true);
-        if (canUseCamera) {
-          await room.localParticipant.setCameraEnabled(true, captureOptions());
+        // Микрофон и камера — уже после установления связи: отказ в доступе
+        // к устройствам не должен выглядеть как «не удалось подключиться».
+        try {
+          await room.localParticipant.setMicrophoneEnabled(true);
+          if (canUseCamera) {
+            await room.localParticipant.setCameraEnabled(true, captureOptions());
+          }
+        } catch (mediaError) {
+          console.error('[livekit] публикация медиа не удалась', mediaError);
+          announceRouteChange('Нет доступа к микрофону или камере. Проверьте разрешения.');
         }
         syncLocalState();
         syncRemote();
-      } catch {
-        if (!cancelled) {
-          setConnectionState('disconnected');
-          announceRouteChange('Не удалось подключиться к звонку.');
+      } catch (error) {
+        if (cancelled) {
+          return;
         }
+        console.error('[livekit] connect failed:', describeConnectError(error));
+        setConnectionState('failed');
+        announceRouteChange('Не удалось подключиться к звонку.');
       }
-    };
-
-    void connect();
+    });
 
     const audioEls = audioElsRef.current;
     return () => {
       cancelled = true;
+      room
+        .off(RoomEvent.Connected, handleConnected)
+        .off(RoomEvent.ConnectionStateChanged, handleConnectionStateChanged)
+        .off(RoomEvent.Reconnecting, handleReconnecting)
+        .off(RoomEvent.Reconnected, handleReconnected)
+        .off(RoomEvent.Disconnected, handleRoomDisconnected)
+        .off(RoomEvent.TrackSubscribed, handleSubscribed)
+        .off(RoomEvent.TrackUnsubscribed, handleUnsubscribed)
+        .off(RoomEvent.ParticipantConnected, handleParticipantConnected)
+        .off(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected)
+        .off(RoomEvent.LocalTrackPublished, syncLocalState)
+        .off(RoomEvent.LocalTrackUnpublished, syncLocalState)
+        .off(RoomEvent.TrackMuted, syncLocalState)
+        .off(RoomEvent.TrackUnmuted, syncLocalState);
       audioEls.forEach((el) => el.remove());
       audioEls.clear();
-      void room.disconnect();
+      // Отключаемся строго после того, как отработает наш connect — иначе
+      // «висячий» disconnect убьёт уже следующее соединение.
+      void runExclusive(() => room.disconnect());
     };
-  }, [room, match.url, match.token, canUseCamera, attachLocalVideo, attachRemoteVideo]);
+  }, [
+    room,
+    match.url,
+    match.token,
+    match.room,
+    role,
+    canUseCamera,
+    attachLocalVideo,
+    attachRemoteVideo,
+    runExclusive,
+  ]);
 
   const toggleMic = useCallback(() => {
     const next = !room.localParticipant.isMicrophoneEnabled;
@@ -291,8 +405,8 @@ export const useLiveKitRoom = ({
   }, [room, canUseCamera, attachLocalVideo]);
 
   const leave = useCallback(() => {
-    void room.disconnect();
-  }, [room]);
+    void runExclusive(() => room.disconnect());
+  }, [room, runExclusive]);
 
   return {
     connectionState,

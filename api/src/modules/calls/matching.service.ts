@@ -123,23 +123,38 @@ export class MatchingService {
     clearTimeout(ring.timer);
     this.ringing.delete(requestId);
 
-    await this.calls.ensureRoom(ring.room);
-    // Имена НЕ кладём в токен: стороны анонимны друг для друга (приватность).
-    const volunteerTok = await this.calls.createToken({
-      room: ring.room,
-      identity: volunteerId,
-      role: UserRole.VOLUNTEER,
-    });
-    const blindTok = await this.calls.createToken({
-      room: ring.room,
-      identity: ring.blindUserId,
-      role: UserRole.BLIND,
-    });
-    this.deliverMatch(volunteerId, volunteerTok);
-    this.deliverMatch(ring.blindUserId, blindTok);
-    this.logger.log(
-      `matched ${ring.blindUserId} <-> ${volunteerId} in ${ring.room}`,
-    );
+    try {
+      await this.calls.ensureRoom(ring.room);
+      // Имена НЕ кладём в токен: стороны анонимны друг для друга (приватность).
+      const volunteerTok = await this.calls.createToken({
+        room: ring.room,
+        identity: volunteerId,
+        role: UserRole.VOLUNTEER,
+      });
+      const blindTok = await this.calls.createToken({
+        room: ring.room,
+        identity: ring.blindUserId,
+        role: UserRole.BLIND,
+      });
+      this.deliverMatch(volunteerId, volunteerTok);
+      this.deliverMatch(ring.blindUserId, blindTok);
+      this.logger.log(
+        `matched ${ring.blindUserId} <-> ${volunteerId} in ${ring.room}`,
+      );
+    } catch (error) {
+      // Комната/токен не выдались (LiveKit недоступен и т.п.). Вызов делается
+      // из gateway через void — без этого лога обе стороны просто зависли бы
+      // на экране звонка, не понимая, что матч не состоялся.
+      this.logger.error(
+        `accept failed for ${ring.requestId} (${ring.room}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      this.emitToUser(volunteerId, 'call:cancelled');
+      this.emitToUser(ring.blindUserId, 'call:cancelled');
+      this.available.add(volunteerId);
+      this.retry({ requestId: ring.requestId, blindUserId: ring.blindUserId });
+    }
   }
 
   decline(requestId: string, volunteerId: string) {
