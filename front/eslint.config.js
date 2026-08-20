@@ -115,7 +115,8 @@ export default [
           alphabetize: { order: 'asc', caseInsensitive: true },
         },
       ],
-      'import/no-unresolved': 'error',
+      // virtual:* — виртуальные модули Vite-плагинов (virtual:pwa-register)
+      'import/no-unresolved': ['error', { ignore: ['^virtual:'] }],
       'import/no-duplicates': 'error',
       'import/newline-after-import': 'warn',
     },
