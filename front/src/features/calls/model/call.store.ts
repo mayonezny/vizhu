@@ -70,6 +70,12 @@ export const useCallStore = createStore<CallStore>('Calls', (set, get) => ({
       ) {
         socket.emit('call:request');
       }
+      // Сокет передёрнулся посреди активного звонка — просим сервер передоставить
+      // матч. Раньше сервер слал его сам на каждый коннект, из-за чего свежий
+      // звонок получал комнату ПРОШЛОГО (стороны разъезжались по разным комнатам).
+      if (get().match && phase === 'matched') {
+        socket.emit('call:resume');
+      }
     });
 
     socket.on('call:waiting', () => {
@@ -143,6 +149,11 @@ export const useCallStore = createStore<CallStore>('Calls', (set, get) => ({
       d.phase = 'idle';
       d.incoming = null;
     });
+    // Явно объявляем уход: иначе сервер ещё 12с grace держит нас в пуле
+    // и шлёт звонки в мёртвый сокет (незрячий видит «волонтёр найден» впустую).
+    if (socket.connected) {
+      socket.emit('volunteer:offline');
+    }
     socket.disconnect();
   },
 

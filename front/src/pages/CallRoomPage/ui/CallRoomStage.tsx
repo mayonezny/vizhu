@@ -17,6 +17,7 @@ const CONNECTION_LABEL: Record<string, string> = {
   connected: 'На связи',
   reconnecting: 'Переподключаемся…',
   disconnected: 'Звонок завершён',
+  failed: 'Не удалось подключиться',
 };
 
 const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
