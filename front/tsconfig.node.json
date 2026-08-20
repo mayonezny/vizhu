@@ -22,5 +22,5 @@
     "noUncheckedSideEffectImports": true
   },
   // Файлы Node.js-контекста: конфиги Vite, Vitest, Playwright
-  "include": ["vite.config.ts", "vitest.config.ts", "playwright.config.ts", "eslint.config.js"]
+  "include": ["vite.config.ts", "vitest.config.ts", "playwright.config.ts"]
 }

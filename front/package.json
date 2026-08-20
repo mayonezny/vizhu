@@ -1,12 +1,14 @@
 {
-  "name": "frontend-template",
+  "name": "vizhu",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite --mode development",
     "build": "tsc -b && vite build --mode production",
     "build:dev": "tsc -b && vite build --mode development",
+    "build:native": "tsc -b && vite build --mode native",
+    "android": "npm run build:native && npx cap sync && npx cap run android",
     "preview": "vite preview",
     "lint": "eslint \"{src,tests}/**/*.{ts,tsx}\" vite.config.ts vitest.config.ts --max-warnings=0",
     "lint:fix": "eslint \"{src,tests}/**/*.{ts,tsx}\" vite.config.ts vitest.config.ts --fix",
@@ -30,6 +32,14 @@
     ]
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/camera": "^8.2.3",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/local-notifications": "^8.3.0",
+    "@capacitor/preferences": "^8.0.1",
+    "@capgo/camera-preview": "^8.11.2",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -50,6 +60,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.23",
     "axios": "^1.12.2",
+    "capacitor-secure-storage-plugin": "^0.13.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "i18next": "^26.0.8",
@@ -70,6 +81,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@eslint/js": "^9.34.0",
     "@tanstack/eslint-plugin-query": "^5.95.2",
     "@tanstack/react-query-devtools": "^5.95.2",
