@@ -9,16 +9,65 @@ import type { CallAlertPort, HapticsPort } from '../types';
  *   и последующий звонок уже звучит.
  * - Вибрация — через HapticsPort (web: navigator.vibrate, iOS Safari — no-op).
  *
- * Ограничение web: звонит только пока вкладка открыта. Нативная реализация
- * должна будить приложение из фона (push + локальное уведомление со звуком,
- * в идеале CallKit / ConnectionService).
+ * Плюс системное уведомление, когда вкладка не на виду: свёрнутое окно
+ * браузера иначе даёт только звук без всякого контекста.
+ *
+ * Ограничение web: всё это живёт, только пока открыт браузер. Разбудить
+ * закрытый браузер способен лишь настоящий push (service worker + FCM).
  */
+
+const NOTIFICATION_TAG = 'vizhu-incoming-call';
+
+const canNotify = (): boolean =>
+  typeof Notification !== 'undefined' && Notification.permission === 'granted';
+
+/**
+ * Показываем только когда волонтёр не смотрит на вкладку: если она перед
+ * глазами, оверлей звонка и так виден, дублировать его карточкой незачем.
+ * hasFocus() ловит и другое окно поверх, и свёрнутый браузер.
+ */
+const shouldNotify = (): boolean => document.visibilityState === 'hidden' || !document.hasFocus();
 
 type AudioCtor = typeof AudioContext;
 
 export const createWebCallAlert = (haptics: HapticsPort): CallAlertPort => {
   let ctx: AudioContext | null = null;
   let loopTimer: ReturnType<typeof setInterval> | null = null;
+  let notification: Notification | null = null;
+
+  const showNotification = () => {
+    if (notification || !shouldNotify()) {
+      return;
+    }
+    if (!canNotify()) {
+      console.warn(
+        '[call] уведомление не показано: разрешение =',
+        typeof Notification === 'undefined' ? 'API недоступен' : Notification.permission,
+      );
+      return;
+    }
+    try {
+      notification = new Notification('Входящий вызов', {
+        body: 'Незрячему нужна помощь',
+        icon: '/assets/icons/icon-192.png',
+        tag: NOTIFICATION_TAG,
+        // Звонок ждёт ответа — карточка не должна исчезать сама.
+        requireInteraction: true,
+      });
+      notification.onclick = () => {
+        // Возвращаем волонтёра к вкладке: решение он принимает на оверлее.
+        window.focus();
+        notification?.close();
+      };
+    } catch {
+      // некоторые браузеры запрещают конструктор вне service worker
+    }
+  };
+
+  const closeNotification = () => {
+    notification?.close();
+    notification = null;
+  };
 
   const getCtx = (): AudioContext | null => {
     if (typeof window === 'undefined') {
@@ -75,6 +124,7 @@ export const createWebCallAlert = (haptics: HapticsPort): CallAlertPort => {
     },
 
     start: () => {
+      showNotification();
       if (loopTimer) {
         return;
       }
@@ -83,6 +133,7 @@ export const createWebCallAlert = (haptics: HapticsPort): CallAlertPort => {
     },
 
     stop: () => {
+      closeNotification();
       if (loopTimer) {
         clearInterval(loopTimer);
         loopTimer = null;

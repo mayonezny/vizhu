@@ -7,6 +7,7 @@ import { useShallow } from 'zustand/shallow';
 import { primeAudio, useCallStore } from '@/features/calls';
 import { useProfile } from '@/features/profile';
 import { announceRouteChange } from '@/shared/lib/a11y/announcer';
+import { platform } from '@/shared/platform';
 
 import './VolunteerPage.scss';
 
@@ -42,8 +43,13 @@ export const VolunteerPage = () => {
       toast.info('Вы ушли с линии');
       announceRouteChange('Вы ушли с линии. Звонки больше не поступают.');
     } else {
-      // Жест пользователя — разблокируем аудио, чтобы рингтон входящего звучал.
+      // Жест пользователя: разблокируем аудио, чтобы рингтон входящего звучал,
+      // и здесь же просим разрешение на уведомления — на регистрации тумблер
+      // по умолчанию выключен, а без разрешения волонтёр со свёрнутым окном
+      // о звонке не узнает. Момент подходящий: человек как раз заявляет,
+      // что готов принимать вызовы.
       primeAudio();
+      void platform.permissions.request('notifications');
       goOnline();
       toast.success('Вы на линии — ждём звонки');
       announceRouteChange('Вы на линии. Ждём входящие звонки.');
