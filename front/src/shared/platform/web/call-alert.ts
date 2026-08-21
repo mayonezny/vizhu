@@ -34,6 +34,7 @@ export const createWebCallAlert = (haptics: HapticsPort): CallAlertPort => {
   let ctx: AudioContext | null = null;
   let loopTimer: ReturnType<typeof setInterval> | null = null;
   let notification: Notification | null = null;
+  let notifyTimer: ReturnType<typeof setInterval> | null = null;
 
   const showNotification = () => {
     if (notification || !shouldNotify()) {
@@ -125,6 +126,13 @@ export const createWebCallAlert = (haptics: HapticsPort): CallAlertPort => {
 
     start: () => {
       showNotification();
+      // macOS игнорирует requireInteraction и убирает баннер через несколько
+      // секунд — независимо от браузера. Пока звонок ждёт ответа, показываем
+      // карточку заново: одинаковый tag заменяет старую, а не копит стопку.
+      notifyTimer ??= setInterval(() => {
+        closeNotification();
+        showNotification();
+      }, 6000);
       if (loopTimer) {
         return;
       }
@@ -133,6 +141,10 @@ export const createWebCallAlert = (haptics: HapticsPort): CallAlertPort => {
     },
 
     stop: () => {
+      if (notifyTimer) {
+        clearInterval(notifyTimer);
+        notifyTimer = null;
+      }
       closeNotification();
       if (loopTimer) {
         clearInterval(loopTimer);
