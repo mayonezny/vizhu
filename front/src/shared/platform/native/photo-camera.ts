@@ -51,8 +51,14 @@ const setTransparent = (on: boolean) => {
  * центрально кропается под пропорции экрана и выглядит как неожиданный зум
  * (на 20:9 теряется до 40% ширины сенсора). Нам нужен полный кадр: чем больше
  * сцены попало в фото, тем лучше работает описание сцены и распознавание.
+ *
+ * Значение — компромисс. Плагин масштабирует к этим границам безусловно,
+ * поэтому слишком мало (1920) заметно режет детализацию мелкого текста для
+ * OCR, а слишком много бессмысленно раздувает файл апскейлом на слабых
+ * камерах и замедляет выгрузку с мобильного интернета. На iOS порог выше
+ * 1920 дополнительно включает полноразмерный захват (isHighResolutionPhoto).
  */
-const CAPTURE_MAX_SIDE = 1920;
+const CAPTURE_MAX_SIDE = 2560;
 
 export const nativePhotoCamera: PhotoCameraPort = {
   mode: 'native-preview',
@@ -97,8 +103,10 @@ export const nativePhotoCamera: PhotoCameraPort = {
       quality: 90,
       width: CAPTURE_MAX_SIDE,
       height: CAPTURE_MAX_SIDE,
-      // максимум качества снимка — скорость тут не критична
-      photoQualityPrioritization: 'quality',
+      // photoQualityPrioritization намеренно НЕ передаём: на iOS значение выше
+      // maxPhotoQualityPrioritization у AVCapturePhotoOutput (по умолчанию
+      // .balanced) роняет приложение через NSInvalidArgumentException, а плагин
+      // этот максимум не поднимает. Разница в качестве не стоит краша.
     });
     return { file: base64ToFile(value) };
   },

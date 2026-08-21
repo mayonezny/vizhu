@@ -13,6 +13,21 @@ export type UseVoiceRecordReturn = {
   cancel: () => void;
 };
 
+/**
+ * Контейнеры в порядке предпочтения. Первые два — то, что понимает Chrome и
+ * Android WebView, третий — единственный формат MediaRecorder в Safari/WKWebView:
+ * ogg и webm там не поддерживаются вовсе, и жёсткий запрос такого типа ронял
+ * конструктор с NotSupportedError, то есть на iOS запись не работала совсем.
+ */
+const MIME_CANDIDATES = ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/mp4'];
+
+const pickMimeType = (): string | undefined => {
+  if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) {
+    return undefined;
+  }
+  return MIME_CANDIDATES.find((type) => MediaRecorder.isTypeSupported(type));
+};
+
 function classifyError(err: unknown): VoiceRecordError {
   if (err instanceof DOMException) {
     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -62,10 +77,10 @@ export function useVoiceRecord(): UseVoiceRecordReturn {
       setAnalyserNode(analyser);
 
       chunksRef.current = [];
-      const mimeType = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
-        ? 'audio/ogg;codecs=opus'
-        : 'audio/webm;codecs=opus';
-      const recorder = new MediaRecorder(stream, { mimeType });
+      // Ни один кандидат не подошёл — отдаём выбор браузеру, он возьмёт
+      // свой дефолтный контейнер (в Safari это audio/mp4).
+      const mimeType = pickMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       recorderRef.current = recorder;
 
       recorder.ondataavailable = (e) => {
@@ -75,7 +90,10 @@ export function useVoiceRecord(): UseVoiceRecordReturn {
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+        // recorder.mimeType — фактический контейнер; на части браузеров он
+        // пустой, тогда берём запрошенный. Бэку важен именно реальный тип.
+        const type = recorder.mimeType || mimeType || 'audio/mp4';
+        const blob = new Blob(chunksRef.current, { type });
         setAudioBlob(blob);
         setStatus('stopped');
       };

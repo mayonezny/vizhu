@@ -10,13 +10,26 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+# Контейнеры, которые Яндекс принимает как есть.
 MIME_TO_FORMAT = {
     "audio/ogg":        "OGG_OPUS",
-    "audio/webm":       "MP4",      
     "audio/wav":        "LINEAR16_PCM",
     "audio/x-wav":      "LINEAR16_PCM",
     "audio/mp3":        "MP3",
     "audio/mpeg":       "MP3",
+}
+
+# Контейнеры, которые Яндекс не понимает — перекодируем в OGG_OPUS через ffmpeg.
+# webm приходит из Chrome и Android WebView, mp4/m4a — из Safari и WKWebView
+# на iOS (там MediaRecorder умеет только mp4, ogg и webm недоступны).
+NEEDS_TRANSCODE = {
+    "audio/webm": ".webm",
+    "video/webm": ".webm",
+    "audio/mp4":  ".mp4",
+    "video/mp4":  ".mp4",
+    "audio/m4a":  ".m4a",
+    "audio/x-m4a": ".m4a",
+    "audio/aac":  ".aac",
 }
 
 
@@ -37,11 +50,12 @@ class YandexSttService:
         }
 
     @staticmethod
-    def _webm_to_ogg(audio_bytes: bytes) -> bytes:
-        with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as src:
+    def _transcode_to_ogg(audio_bytes: bytes, suffix: str = ".webm") -> bytes:
+        """Перекодирует любой поддерживаемый ffmpeg контейнер в OGG/Opus."""
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as src:
             src.write(audio_bytes)
             src_path = src.name
-        dst_path = src_path.replace(".webm", ".ogg")
+        dst_path = src_path.rsplit(".", 1)[0] + ".ogg"
         try:
             subprocess.run(
                 ["ffmpeg", "-y", "-i", src_path, "-c:a", "libopus", dst_path],
@@ -57,10 +71,10 @@ class YandexSttService:
     async def recognize(self, audio_base64: str, mime_type: str, lang: str = "ru-RU") -> str:
         base_mime = mime_type.split(";")[0].strip()
 
-        if base_mime in ("audio/webm", "video/webm"):
-            logger.info("Конвертируем WebM → OGG")
+        if base_mime in NEEDS_TRANSCODE:
+            logger.info("Конвертируем %s → OGG", base_mime)
             audio_bytes = base64.b64decode(audio_base64)
-            audio_bytes = self._webm_to_ogg(audio_bytes)
+            audio_bytes = self._transcode_to_ogg(audio_bytes, NEEDS_TRANSCODE[base_mime])
             audio_base64 = base64.b64encode(audio_bytes).decode()
             base_mime = "audio/ogg"
 

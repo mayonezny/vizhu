@@ -69,7 +69,7 @@ export const VoiceRecordOverlay = ({ onClose, onSend, isSending }: Props) => {
     shouldAutoSendRef.current = false;
     announceRouteChange('Отправка...');
     setIsAutoSending(true);
-    void onSendRef.current(audioBlob, audioBlob.type || 'audio/webm').finally(() => {
+    void onSendRef.current(audioBlob, audioBlob.type || 'audio/mp4').finally(() => {
       setIsAutoSending(false);
     });
   }, [status, audioBlob]);
