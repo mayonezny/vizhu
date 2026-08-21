@@ -12,6 +12,7 @@ import { createAppRouter } from './router';
 // i18n должен быть инициализирован до рендера — иначе первый рендер будет без переводов
 import '@/shared/lib/i18n';
 import './index.css';
+import { StatusBar } from '@capacitor/status-bar';
 
 const root = document.getElementById('root');
 if (!root) {
@@ -72,6 +73,7 @@ const bootstrap = async () => {
     }),
     AUTH_BOOTSTRAP_TIMEOUT_MS,
   );
+  await StatusBar.setOverlaysWebView({ overlay: false });
   startApp();
 };
 
