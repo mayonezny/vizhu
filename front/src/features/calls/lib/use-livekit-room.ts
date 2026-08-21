@@ -65,6 +65,97 @@ export type LiveKitRoomState = {
 // eslint-disable-next-line no-console
 const lkLog = (...args: unknown[]): void => console.info('[livekit]', ...args);
 
+/**
+ * Раз в 5 секунд печатает реальные параметры видео: что фактически уходит
+ * в сеть у публикующего и что приходит подписчику. Без этого спор «плохое
+ * качество — это код или канал» не решается: WebRTC сам занижает поток, и
+ * qualityLimitationReason прямо называет виновника (bandwidth / cpu / none).
+ */
+const startVideoStatsProbe = (room: Room, publishing: boolean): (() => void) => {
+  let prevBytes = 0;
+  let prevAt = 0;
+
+  const tick = async () => {
+    try {
+      const pub = publishing
+        ? room.localParticipant.getTrackPublication(Track.Source.Camera)
+        : [...room.remoteParticipants.values()][0]?.getTrackPublication(Track.Source.Camera);
+      const track = pub?.videoTrack;
+      const stats: RTCStatsReport | undefined = await track?.getRTCStatsReport();
+      if (!stats) {
+        return;
+      }
+      // Выбранная ICE-пара. Ищем её строго по ссылке из transport-отчёта:
+      // поле `nominated` в WebView может отсутствовать, а local-candidate'ов
+      // в отчёте много — брать первый попавшийся нельзя, получается мусор.
+      const byId = new Map<string, Record<string, unknown>>();
+      let pairId: string | undefined;
+      stats.forEach((report: Record<string, unknown>) => {
+        byId.set(String(report.id), report);
+        if (report.type === 'transport' && report.selectedCandidatePairId) {
+          pairId = String(report.selectedCandidatePairId);
+        }
+      });
+      let pair = pairId ? byId.get(pairId) : undefined;
+      if (!pair) {
+        // Safari/WKWebView не всегда заполняет transport.selectedCandidatePairId
+        stats.forEach((report: Record<string, unknown>) => {
+          if (report.type === 'candidate-pair' && (report.nominated || report.selected)) {
+            pair = report;
+          }
+        });
+      }
+      const localCand = pair?.localCandidateId
+        ? byId.get(String(pair.localCandidateId))
+        : undefined;
+      const transport = pair
+        ? `${String(localCand?.protocol ?? pair.protocol ?? '?')}/${String(localCand?.candidateType ?? '?')}`
+        : '?';
+      const rtt =
+        typeof pair?.currentRoundTripTime === 'number'
+          ? Math.round(pair.currentRoundTripTime * 1000)
+          : '?';
+      // Прямая оценка доступной полосы — главный ответ на вопрос
+      // «почему картинка мыльная»: по ней WebRTC и выбирает разрешение.
+      const bweKbps =
+        typeof pair?.availableOutgoingBitrate === 'number'
+          ? Math.round(pair.availableOutgoingBitrate / 1000)
+          : '?';
+
+      const sourceFps = track?.mediaStreamTrack?.getSettings().frameRate;
+      const wanted = publishing ? 'outbound-rtp' : 'inbound-rtp';
+      stats.forEach((report: Record<string, unknown>) => {
+        if (report.type !== wanted || report.kind !== 'video') {
+          return;
+        }
+        const bytes = Number(publishing ? report.bytesSent : report.bytesReceived) || 0;
+        const at = Number(report.timestamp) || Date.now();
+        const kbps =
+          prevAt && at > prevAt ? Math.round(((bytes - prevBytes) * 8) / (at - prevAt)) : 0;
+        prevBytes = bytes;
+        prevAt = at;
+        lkLog(publishing ? 'отдаём:' : 'принимаем:', {
+          size: `${String(report.frameWidth ?? '?')}x${String(report.frameHeight ?? '?')}`,
+          fps: report.framesPerSecond ?? '?',
+          kbps,
+          limitedBy: report.qualityLimitationReason ?? 'n/a',
+          // srcFps имеет смысл только у публикующего: это частота с камеры.
+          // Отличает «сеть режет» от «источник и так медленный».
+          ...(publishing ? { srcFps: sourceFps ?? '?', bweKbps } : {}),
+          transport,
+          rttMs: rtt,
+          lost: report.packetsLost ?? 0,
+        });
+      });
+    } catch {
+      // статистика — вспомогательная вещь, её сбой не должен трогать звонок
+    }
+  };
+
+  const id = setInterval(() => void tick(), 5000);
+  return () => clearInterval(id);
+};
+
 /** Человекочитаемая причина отключения — иначе в логах пусто и отладка вслепую. */
 const disconnectReasonName = (reason?: DisconnectReason): string =>
   reason === undefined ? 'unknown' : (DisconnectReason[reason] ?? String(reason));
@@ -106,9 +197,13 @@ export const useLiveKitRoom = ({
         // волонтёр всегда получал единственный полноценный поток.
         adaptiveStream: false,
         dynacast: false,
-        // Захватываем камеру в 720p (по умолчанию — задняя).
+        // 720p, а не 1080p: WebRTC угадывает ширину канала и стартует с
+        // сотен килобит, разгоняясь до минуты. На такой полосе 1080p
+        // пережимается в мыло, тогда как 720p-исходник остаётся резким —
+        // а на хорошем канале разница для волонтёра почти незаметна.
+        // (по умолчанию — задняя камера)
         videoCaptureDefaults: {
-          resolution: VideoPresets.h1080.resolution,
+          resolution: VideoPresets.h720.resolution,
           facingMode: 'environment',
         },
         // Один поток, весь аплинк-битрейт в него. Меньше слоёв = меньше нагрузка
@@ -116,13 +211,18 @@ export const useLiveKitRoom = ({
         publishDefaults: {
           simulcast: false,
           videoEncoding: {
-            maxBitrate: 4_500_000,
+            // 3 Мбит — потолок качественного 720p30. Больше на этом
+            // разрешении почти не даёт выигрыша, зато дольше разгоняется
+            // оценка полосы и выше шанс залипнуть на низком битрейте.
+            maxBitrate: 3_000_000,
             maxFramerate: 30,
           },
-          // Волонтёр читает незрячему мелкий текст — ценники, инструкции,
-          // показания счётчиков. При нехватке полосы жертвуем плавностью,
-          // а не чёткостью: LiveKit срежет fps, оставив 1080p.
-          degradationPreference: 'maintain-resolution',
+          // 'balanced', а не 'maintain-resolution': последний при узком канале
+          // цеплялся за 1080p и ронял частоту до 1-5 кадров в секунду —
+          // волонтёр получал слайд-шоу и не мог направлять камеру голосом.
+          // Пусть WebRTC сам решает, что резать: на хорошем канале останется
+          // 1080p30, на плохом опустит разрешение, сохранив плавность.
+          degradationPreference: 'balanced',
           red: true,
           dtx: true,
         },
@@ -160,7 +260,7 @@ export const useLiveKitRoom = ({
   }, []);
 
   const captureOptions = (): VideoCaptureOptions => ({
-    resolution: VideoPresets.h1080.resolution,
+    resolution: VideoPresets.h720.resolution,
     facingMode: facingModeRef.current,
   });
 
@@ -198,6 +298,7 @@ export const useLiveKitRoom = ({
 
   useEffect(() => {
     let cancelled = false;
+    let stopStatsProbe: (() => void) | null = null;
 
     const syncLocalState = () => {
       setMicEnabled(room.localParticipant.isMicrophoneEnabled);
@@ -339,6 +440,7 @@ export const useLiveKitRoom = ({
         }
         syncLocalState();
         syncRemote();
+        stopStatsProbe = startVideoStatsProbe(room, canUseCamera);
       } catch (error) {
         if (cancelled) {
           return;
@@ -352,6 +454,7 @@ export const useLiveKitRoom = ({
     const audioEls = audioElsRef.current;
     return () => {
       cancelled = true;
+      stopStatsProbe?.();
       room
         .off(RoomEvent.Connected, handleConnected)
         .off(RoomEvent.ConnectionStateChanged, handleConnectionStateChanged)
@@ -421,7 +524,6 @@ export const useLiveKitRoom = ({
     // просто не переключалась. Спускаемся до 720p, затем вовсе снимаем
     // требование к разрешению: лучше передняя камера в 480p, чем никакой.
     const attempts: Array<VideoCaptureOptions> = [
-      { resolution: VideoPresets.h1080.resolution, facingMode: nextFacing },
       { resolution: VideoPresets.h720.resolution, facingMode: nextFacing },
       { facingMode: nextFacing },
     ];

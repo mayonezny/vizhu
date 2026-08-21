@@ -74,9 +74,14 @@ export const nativePhotoCamera: PhotoCameraPort = {
           position: 'rear',
           toBack: true,
           disableAudio: true,
-          // Превью на весь экран без полей: 'contain' (дефолт) оставлял
-          // серые пустые зоны сверху/снизу вокруг кадра 4:3.
-          aspectRatio: '16:9',
+          // 4:3 — родное соотношение сенсора. Важно не только для превью:
+          // на Android CameraX отдаёт ImageCapture тот же ResolutionSelector,
+          // что и превью, поэтому '16:9' резал снимок до 16:9 из кадра 4:3 —
+          // терялись верх и низ, и это выглядело как подзум. На iOS такого
+          // нет: AVCapturePhotoOutput всегда снимает полный кадр сенсора.
+          aspectRatio: '4:3',
+          // 'contain' (дефолт) оставлял серые поля вокруг кадра — растягиваем
+          // превью на весь экран. На сам снимок это не влияет.
           aspectMode: 'cover',
         });
         previewActive = true;
