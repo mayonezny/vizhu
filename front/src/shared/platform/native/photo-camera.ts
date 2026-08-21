@@ -1,4 +1,5 @@
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { StatusBar } from '@capacitor/status-bar';
 import { CameraPreview } from '@capgo/camera-preview';
 
 import type { CapturedPhoto, PhotoCameraPort } from '../types';
@@ -15,6 +16,24 @@ import type { CapturedPhoto, PhotoCameraPort } from '../types';
 
 /** Класс прозрачности — согласован с app/index.css и DialogPage.scss. */
 export const CAMERA_PREVIEW_ACTIVE_CLASS = 'camera-preview-active';
+
+/**
+ * Геометрия превью: контейнер строго во весь экран, начало координат в углу.
+ *
+ * - `aspectRatio` из API плагина не используем: на Android он ужимает
+ *   контейнер (height = width / ratio) и вдобавок навязывает ImageCapture тот
+ *   же ResolutionSelector, из-за чего обрезался сам снимок;
+ * - размеры обязательно задаём явно: без них плагин выбирает их сам и
+ *   оставляет полосу, а `aspectMode` этого не лечит — он масштабирует кадр
+ *   внутри контейнера, а не сам контейнер;
+ * - x/y тоже задаём явно: незаданные координаты включают авто-центрирование,
+ *   и незанятое место разъезжается полосами сверху и снизу.
+ *
+ * Итог: `cover` растягивает кадр на весь экран, обрезая края по вертикали,
+ * а съёмка остаётся в максимальном разрешении сенсора — файл получает полный
+ * кадр 4:3. То есть на фото попадает чуть больше, чем видно в превью; для
+ * нейропомощника это плюс, ИИ получает больше сцены.
+ */
 
 const base64ToFile = (base64: string, mime = 'image/jpeg'): File => {
   const bytes = atob(base64);
@@ -70,22 +89,20 @@ export const nativePhotoCamera: PhotoCameraPort = {
       }
       setTransparent(true);
       try {
+        await StatusBar.setOverlaysWebView({ overlay: true });
         await CameraPreview.start({
           position: 'rear',
           toBack: true,
           disableAudio: true,
-          // 4:3 — родное соотношение сенсора. Важно не только для превью:
-          // на Android CameraX отдаёт ImageCapture тот же ResolutionSelector,
-          // что и превью, поэтому '16:9' резал снимок до 16:9 из кадра 4:3 —
-          // терялись верх и низ, и это выглядело как подзум. На iOS такого
-          // нет: AVCapturePhotoOutput всегда снимает полный кадр сенсора.
-          aspectRatio: '4:3',
-          // 'contain' (дефолт) оставлял серые поля вокруг кадра — растягиваем
-          // превью на весь экран. На сам снимок это не влияет.
+          x: 0,
+          y: 0,
+          width: Math.round(window.innerWidth),
+          height: Math.round(window.innerHeight + (await StatusBar.getInfo()).height) + 1,
           aspectMode: 'cover',
         });
         previewActive = true;
       } catch (error) {
+        await StatusBar.setOverlaysWebView({ overlay: false });
         setTransparent(false);
         throw error;
       }
@@ -97,6 +114,7 @@ export const nativePhotoCamera: PhotoCameraPort = {
       // Класс снимаем и камеру гасим безусловно: даже если старт не успел
       // доложить об успехе, нативное превью уже могло подняться.
       setTransparent(false);
+      await StatusBar.setOverlaysWebView({ overlay: false });
       await CameraPreview.stop().catch(() => {});
     }),
 

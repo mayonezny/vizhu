@@ -65,15 +65,25 @@ export type LiveKitRoomState = {
 // eslint-disable-next-line no-console
 const lkLog = (...args: unknown[]): void => console.info('[livekit]', ...args);
 
+/** Оценка полосы, выше которой считаем, что канал потянет 1080p. */
+const UPGRADE_BWE_KBPS = 3000;
+/** Сколько замеров подряд должен держаться запас (5с × 3 = 15 секунд). */
+const UPGRADE_SAMPLES = 3;
+
 /**
  * Раз в 5 секунд печатает реальные параметры видео: что фактически уходит
  * в сеть у публикующего и что приходит подписчику. Без этого спор «плохое
  * качество — это код или канал» не решается: WebRTC сам занижает поток, и
  * qualityLimitationReason прямо называет виновника (bandwidth / cpu / none).
  */
-const startVideoStatsProbe = (room: Room, publishing: boolean): (() => void) => {
+const startVideoStatsProbe = (
+  room: Room,
+  publishing: boolean,
+  onSustainedHeadroom?: () => void,
+): (() => void) => {
   let prevBytes = 0;
   let prevAt = 0;
+  let goodSamples = 0;
 
   const tick = async () => {
     try {
@@ -146,6 +156,20 @@ const startVideoStatsProbe = (room: Room, publishing: boolean): (() => void) => 
           rttMs: rtt,
           lost: report.packetsLost ?? 0,
         });
+
+        if (!publishing || !onSustainedHeadroom) {
+          return;
+        }
+        // Апгрейд оправдан только если кодек УЖЕ не режет разрешение
+        // (то есть упёрся в наш потолок), и при этом полоса свободна.
+        const atCeiling =
+          Number(report.frameHeight ?? 0) >= 720 || Number(report.frameWidth ?? 0) >= 1280;
+        const hasHeadroom = typeof bweKbps === 'number' && bweKbps >= UPGRADE_BWE_KBPS;
+        goodSamples = atCeiling && hasHeadroom ? goodSamples + 1 : 0;
+        if (goodSamples >= UPGRADE_SAMPLES) {
+          goodSamples = 0;
+          onSustainedHeadroom();
+        }
       });
     } catch {
       // статистика — вспомогательная вещь, её сбой не должен трогать звонок
@@ -211,10 +235,11 @@ export const useLiveKitRoom = ({
         publishDefaults: {
           simulcast: false,
           videoEncoding: {
-            // 3 Мбит — потолок качественного 720p30. Больше на этом
-            // разрешении почти не даёт выигрыша, зато дольше разгоняется
-            // оценка полосы и выше шанс залипнуть на низком битрейте.
-            maxBitrate: 3_000_000,
+            // Потолок под 1080p, до которого можем дорасти адаптивно.
+            // Занижать нельзя: WebRTC наращивает оценку полосы, только пока
+            // кодек просит больше, поэтому при низком максимуме мы бы просто
+            // никогда не увидели, что канал свободен.
+            maxBitrate: 4_500_000,
             maxFramerate: 30,
           },
           // 'balanced', а не 'maintain-resolution': последний при узком канале
@@ -245,6 +270,9 @@ export const useLiveKitRoom = ({
   const audioElsRef = useRef<Set<HTMLMediaElement>>(new Set());
   const facingModeRef = useRef<FacingMode>('environment');
   const everConnectedRef = useRef(false);
+  /** Апгрейд до 1080p делаем один раз за звонок — иначе моргание по кругу. */
+  const upgradedRef = useRef(false);
+  const cameraSwitchingRef = useRef(false);
   const onDisconnectedRef = useRef(onDisconnected);
   onDisconnectedRef.current = onDisconnected;
 
@@ -440,7 +468,34 @@ export const useLiveKitRoom = ({
         }
         syncLocalState();
         syncRemote();
-        stopStatsProbe = startVideoStatsProbe(room, canUseCamera);
+        stopStatsProbe = startVideoStatsProbe(room, canUseCamera, () => {
+          // Канал 15 секунд подряд держит запас поверх 720p — поднимаем
+          // захват до 1080p. Обратно не опускаемся: при просадке WebRTC сам
+          // отмасштабирует картинку вниз, а перезапуск трека туда-сюда давал
+          // бы моргание на каждом колебании сети.
+          if (upgradedRef.current || cameraSwitchingRef.current) {
+            return;
+          }
+          const camTrack = room.localParticipant.getTrackPublication(
+            Track.Source.Camera,
+          )?.videoTrack;
+          if (!camTrack) {
+            return;
+          }
+          upgradedRef.current = true;
+          lkLog('канал свободен — поднимаем захват до 1080p');
+          void camTrack
+            .restartTrack({
+              resolution: VideoPresets.h1080.resolution,
+              facingMode: facingModeRef.current,
+            })
+            .then(() => attachLocalVideo())
+            .catch((error: unknown) => {
+              // Не вышло (камера не даёт 1080p) — остаёмся на 720p и больше
+              // не пробуем, чтобы не дёргать трек каждые 15 секунд.
+              lkLog('апгрейд до 1080p не удался, остаёмся на 720p:', error);
+            });
+        });
       } catch (error) {
         if (cancelled) {
           return;
@@ -542,6 +597,7 @@ export const useLiveKitRoom = ({
     };
 
     setCameraSwitching(true);
+    cameraSwitchingRef.current = true;
     void tryNext(0)
       .then(() => {
         // Состояние меняем только по факту успеха: раньше оно обновлялось
@@ -556,7 +612,10 @@ export const useLiveKitRoom = ({
         console.error('[livekit] не удалось переключить камеру', error);
         announceRouteChange('Не удалось переключить камеру');
       })
-      .finally(() => setCameraSwitching(false));
+      .finally(() => {
+        cameraSwitchingRef.current = false;
+        setCameraSwitching(false);
+      });
   }, [room, canUseCamera, cameraSwitching, attachLocalVideo]);
 
   const leave = useCallback(() => {
