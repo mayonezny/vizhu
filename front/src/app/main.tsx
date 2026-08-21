@@ -73,7 +73,10 @@ const bootstrap = async () => {
     }),
     AUTH_BOOTSTRAP_TIMEOUT_MS,
   );
-  await StatusBar.setOverlaysWebView({ overlay: false });
+
+  if (isNativePlatform()) {
+    await StatusBar.setOverlaysWebView({ overlay: false });
+  }
   startApp();
 };
 
