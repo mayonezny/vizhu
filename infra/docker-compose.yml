@@ -76,6 +76,7 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://vizhu:${POSTGRES_PASSWORD}@postgres:5432/vizhu
       REDIS_URL: redis://redis:6379
+      MATCHING_BACKEND: ${MATCHING_BACKEND:-memory}
       AI_SERVICE_URL: http://ai:8000
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: 7d
@@ -87,8 +88,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    #   redis:
-    #     condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
       interval: 30s
@@ -154,14 +155,12 @@ services:
       retries: 5
 
   redis:
-    profiles:
-      - max
     image: redis:7-alpine
     container_name: vizhu_redis
     restart: unless-stopped
     networks:
       - backend_net
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
     volumes:
       - redis_data:/data
     healthcheck:

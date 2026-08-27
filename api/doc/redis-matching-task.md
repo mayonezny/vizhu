@@ -1,5 +1,8 @@
 # Задача: перенести матчинг звонков на Redis
 
+> Детальный порядок реализации, модель ключей, тестовые сценарии и условия
+> выкатки: [`redis-matching-implementation-plan.md`](redis-matching-implementation-plan.md).
+
 ## Зачем
 
 Сейчас всё состояние матчинга живёт в полях класса `MatchingService`

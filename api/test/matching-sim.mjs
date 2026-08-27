@@ -23,6 +23,10 @@ const API_URL = process.env.API_URL ?? 'http://localhost:3000';
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev_secret_not_for_prod';
 const DATABASE_URL =
   process.env.DATABASE_URL ?? 'postgresql://vizhu:devpassword@localhost:5432/vizhu';
+// При запуске всех сценариев один за другим даём серверу закончить grace cleanup:
+// иначе закрытые в предыдущем сценарии сокеты ещё 12 секунд остаются в состоянии
+// матчинга и влияют на следующий. Для одиночного сценария пауза не нужна.
+const SCENARIO_CLEANUP_MS = Number(process.env.SCENARIO_CLEANUP_MS ?? 13_000);
 
 /** Тестовые учётки. Телефоны заведомо нереальные, чтобы не пересечься с живыми. */
 const ACTORS = {
@@ -165,7 +169,8 @@ const scenarios = {
 
       const incoming = await volunteer.wait('call:incoming');
       check(Boolean(incoming?.requestId), 'волонтёр получил call:incoming');
-      check(await blind.wait('call:searching'), 'незрячий получил call:searching');
+      await blind.wait('call:searching');
+      check(blind.got('call:searching'), 'незрячий получил call:searching');
 
       volunteer.emit('call:accept', { requestId: incoming.requestId });
       const volunteerMatch = await volunteer.wait('call:matched');
@@ -230,7 +235,8 @@ const scenarios = {
       await blind.connect();
       blind.emit('call:request');
 
-      check(Boolean(await blind.wait('call:waiting')), 'незрячий встал в очередь');
+      await blind.wait('call:waiting');
+      check(blind.got('call:waiting'), 'незрячий встал в очередь');
       check(!volunteer.got('call:incoming'), 'ушедшему волонтёру вызов не пришёл');
     } finally {
       volunteer.close();
@@ -288,7 +294,8 @@ const scenarios = {
 
       await blind2.connect();
       blind2.emit('call:request');
-      check(Boolean(await blind2.wait('call:waiting')), 'второй незрячий встал в очередь');
+      await blind2.wait('call:waiting');
+      check(blind2.got('call:waiting'), 'второй незрячий встал в очередь');
       check(!blind2.got('call:matched'), 'второго не свело с занятым волонтёром');
     } finally {
       volunteer.close();
@@ -306,7 +313,7 @@ const names = requested.length ? requested : Object.keys(scenarios);
 log(`\nМатчинг: ${API_URL}\n`);
 const actors = await seedActors();
 
-for (const name of names) {
+for (const [index, name] of names.entries()) {
   const scenario = scenarios[name];
   if (!scenario) {
     log(`\x1b[33mнеизвестный сценарий: ${name}\x1b[0m`);
@@ -319,7 +326,7 @@ for (const name of names) {
     failures += 1;
     fail(`упал с ошибкой: ${error.message}`);
   }
-  await sleep(500);
+  if (index + 1 < names.length) await sleep(SCENARIO_CLEANUP_MS);
 }
 
 log(failures ? `\n\x1b[31mПровалено проверок: ${failures}\x1b[0m\n` : '\n\x1b[32mВсё зелёное\x1b[0m\n');
