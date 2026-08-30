@@ -7,6 +7,23 @@ import type {
 } from './matching.store';
 
 const PREFIX = 'matching:v1';
+const REMOVE_ONLINE_SOCKET_SCRIPT = `
+  local currentSocketId = redis.call('HGET', KEYS[1], ARGV[1])
+  if currentSocketId == ARGV[2] then
+    return redis.call('HDEL', KEYS[1], ARGV[1])
+  end
+  return 0
+`;
+const TAKE_RING_SCRIPT = `
+  local raw = redis.call('GET', KEYS[1])
+  if not raw then return nil end
+  local ring = cjson.decode(raw)
+  redis.call('DEL', KEYS[1])
+  redis.call('HDEL', KEYS[2], ring.blindUserId)
+  redis.call('HDEL', KEYS[3], ring.volunteerId)
+  redis.call('ZREM', KEYS[4], ring.requestId)
+  return raw
+`;
 const keys = {
   online: `${PREFIX}:online`,
   available: `${PREFIX}:available`,
@@ -63,9 +80,17 @@ export class RedisMatchingStore implements MatchingStore {
     return (await this.client.hget(keys.online, userId)) ?? undefined;
   }
   async removeOnlineSocket(userId: string, socketId?: string): Promise<void> {
-    if (!socketId || (await this.getOnlineSocket(userId)) === socketId) {
+    if (!socketId) {
       await this.client.hdel(keys.online, userId);
+      return;
     }
+    await this.client.eval(
+      REMOVE_ONLINE_SOCKET_SCRIPT,
+      1,
+      keys.online,
+      userId,
+      socketId,
+    );
   }
 
   async addAvailableVolunteer(userId: string): Promise<void> {
@@ -138,16 +163,17 @@ export class RedisMatchingStore implements MatchingStore {
       .exec();
   }
   async takeRing(requestId: string): Promise<ActiveRing | undefined> {
-    const ring = await this.getRing(requestId);
-    if (!ring) return undefined;
-    await this.client
-      .multi()
-      .del(keys.ring(requestId))
-      .hdel(keys.ringByBlind, ring.blindUserId)
-      .hdel(keys.ringByVolunteer, ring.volunteerId)
-      .zrem(keys.ringDeadlines, requestId)
-      .exec();
-    return ring;
+    const raw = await this.client.eval(
+      TAKE_RING_SCRIPT,
+      4,
+      keys.ring(requestId),
+      keys.ringByBlind,
+      keys.ringByVolunteer,
+      keys.ringDeadlines,
+    );
+    return typeof raw === 'string'
+      ? this.parse<ActiveRing>(raw, keys.ring(requestId))
+      : undefined;
   }
   async takeExpiredRings(now: number): Promise<ActiveRing[]> {
     const requestIds = await this.client.zrangebyscore(

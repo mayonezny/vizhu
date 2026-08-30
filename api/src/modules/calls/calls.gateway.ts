@@ -58,33 +58,44 @@ export class CallsGateway
 
   handleDisconnect(client: Socket): void {
     const user = this.getUser(client);
-    if (user) void this.matching.userDisconnected(user.id, client.id);
+    if (user)
+      this.runCommand(
+        'socket:disconnect',
+        this.matching.userDisconnected(user.id, client.id),
+      );
   }
 
   @SubscribeMessage('volunteer:online')
   onVolunteerOnline(@ConnectedSocket() client: Socket): void {
     const user = this.getUser(client);
     if (user?.role === UserRole.VOLUNTEER)
-      void this.matching.volunteerOnline(user.id);
+      this.runCommand(
+        'volunteer:online',
+        this.matching.volunteerOnline(user.id),
+      );
   }
 
   @SubscribeMessage('volunteer:offline')
   onVolunteerOffline(@ConnectedSocket() client: Socket): void {
     const user = this.getUser(client);
     if (user?.role === UserRole.VOLUNTEER)
-      void this.matching.volunteerOffline(user.id);
+      this.runCommand(
+        'volunteer:offline',
+        this.matching.volunteerOffline(user.id),
+      );
   }
 
   @SubscribeMessage('call:resume')
   onResume(@ConnectedSocket() client: Socket): void {
     const user = this.getUser(client);
-    if (user) void this.matching.resume(user.id);
+    if (user) this.runCommand('call:resume', this.matching.resume(user.id));
   }
 
   @SubscribeMessage('call:request')
   onRequest(@ConnectedSocket() client: Socket): void {
     const user = this.getUser(client);
-    if (user?.role === UserRole.BLIND) void this.matching.requestHelp(user.id);
+    if (user?.role === UserRole.BLIND)
+      this.runCommand('call:request', this.matching.requestHelp(user.id));
   }
 
   @SubscribeMessage('call:accept')
@@ -93,7 +104,15 @@ export class CallsGateway
     @MessageBody() body: { requestId: string },
   ): void {
     const user = this.getUser(client);
-    if (user) void this.matching.accept(body.requestId, user.id);
+    if (
+      user?.role === UserRole.VOLUNTEER &&
+      this.isRequestId(body?.requestId)
+    ) {
+      this.runCommand(
+        'call:accept',
+        this.matching.accept(body.requestId, user.id),
+      );
+    }
   }
 
   @SubscribeMessage('call:decline')
@@ -102,7 +121,15 @@ export class CallsGateway
     @MessageBody() body: { requestId: string },
   ): void {
     const user = this.getUser(client);
-    if (user) void this.matching.decline(body.requestId, user.id);
+    if (
+      user?.role === UserRole.VOLUNTEER &&
+      this.isRequestId(body?.requestId)
+    ) {
+      this.runCommand(
+        'call:decline',
+        this.matching.decline(body.requestId, user.id),
+      );
+    }
   }
 
   // единственное место, где мы «приземляем» any из socket.io в типизированный объект
@@ -120,5 +147,24 @@ export class CallsGateway
     const payload = this.jwt.verify<JwtPayload>(auth.token);
     const user = await this.users.getProfile(payload.sub);
     this.setUser(client, { id: user.uuid, role: user.role });
+  }
+
+  private runCommand(event: string, command: Promise<void>): void {
+    void command.catch((error: unknown) => {
+      this.logger.error(
+        `matching command ${event} failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    });
+  }
+
+  private isRequestId(value: unknown): value is string {
+    return (
+      typeof value === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        value,
+      )
+    );
   }
 }

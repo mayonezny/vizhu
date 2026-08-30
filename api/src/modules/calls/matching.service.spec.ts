@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { InMemoryMatchingStore } from './in-memory-matching.store';
 import { MatchingService } from './matching.service';
 
@@ -15,7 +16,7 @@ describe('MatchingService', () => {
       }),
     };
     const calls = {
-      ensureRoom: jest.fn().mockResolvedValue(undefined),
+      ensureRoom: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
       createToken: jest
         .fn()
         .mockImplementation(
