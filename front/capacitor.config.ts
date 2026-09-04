@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
   // абсолютный адрес). Общая папка приводила к тому, что случайный
   // `npm run build` подсовывал в приложение web-бандл, и запросы уходили
   // в capacitor://localhost/api, то есть никуда.
-  webDir: 'dist-native'
+  webDir: 'dist-native',
 };
 
 export default config;

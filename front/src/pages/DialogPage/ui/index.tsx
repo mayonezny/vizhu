@@ -29,6 +29,15 @@ import './DialogPage.scss';
 
 type Phase = 'camera' | 'processing' | 'result' | 'chat';
 
+/**
+ * Диагностика съёмки: показывает, каким путём получен кадр (аппаратный
+ * ImageCapture или canvas) и сколько он весит. Правило no-console запрещает
+ * info — здесь осознанное исключение на один хелпер, чтобы не глушить правило
+ * по всему проекту.
+ */
+// eslint-disable-next-line no-console
+const capLog = (...args: unknown[]): void => console.info('[capture]', ...args);
+
 const MODE_LABELS: Record<DialogMode, string> = {
   describe: 'Описание сцены',
   ocr: 'Распознавание текста',
@@ -308,11 +317,7 @@ export const DialogPage = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ic = new (window as any).ImageCapture(track);
         blob = (await ic.takePhoto()) as Blob;
-        console.log(
-          '[capture] ImageCapture.takePhoto()',
-          `${(blob.size / 1024).toFixed(0)} KB`,
-          blob.type,
-        );
+        capLog('ImageCapture.takePhoto()', `${(blob.size / 1024).toFixed(0)} KB`, blob.type);
       } catch (e) {
         console.warn('[capture] ImageCapture failed, fallback to canvas', e);
       }
@@ -330,7 +335,7 @@ export const DialogPage = () => {
       ctx.drawImage(video, 0, 0);
       blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.92));
       if (blob) {
-        console.log('[capture] canvas fallback', `${(blob.size / 1024).toFixed(0)} KB`, blob.type);
+        capLog('canvas fallback', `${(blob.size / 1024).toFixed(0)} KB`, blob.type);
       }
     }
 

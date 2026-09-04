@@ -1,0 +1,15 @@
+# Образ фронта собирается из исходников — всё остальное в контекст не нужно.
+node_modules
+dist
+dist-native
+coverage
+
+# Нативные проекты Capacitor: ~420 МБ, к web-сборке отношения не имеют
+ios
+android
+
+.git
+.github
+*.log
+.env*
+!.env.production

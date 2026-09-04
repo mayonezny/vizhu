@@ -1,3 +1,4 @@
+import { StatusBar } from '@capacitor/status-bar';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
@@ -12,7 +13,6 @@ import { createAppRouter } from './router';
 // i18n должен быть инициализирован до рендера — иначе первый рендер будет без переводов
 import '@/shared/lib/i18n';
 import './index.css';
-import { StatusBar } from '@capacitor/status-bar';
 
 const root = document.getElementById('root');
 if (!root) {

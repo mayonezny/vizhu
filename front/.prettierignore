@@ -1,0 +1,15 @@
+# Сборочные артефакты
+dist
+dist-native
+coverage
+node_modules
+
+# Нативные проекты Capacitor: генерируются CLI и содержат чужой код
+# (Xcode DerivedData, gradle-обвязка, скопированный web-бандл).
+# Prettier тут не нужен, а на DerivedData он ещё и падает по правам.
+ios
+android
+
+# Служебное
+public/mockServiceWorker.js
+*.min.js
