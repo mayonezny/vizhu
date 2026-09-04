@@ -150,7 +150,9 @@
     -webkit-overflow-scrolling: touch;
     background: #fff;
     border-radius: var(--radius-lg);
-    transition: opacity 150ms ease, transform 150ms ease;
+    transition:
+      opacity 150ms ease,
+      transform 150ms ease;
     touch-action: pan-y;
     user-select: none;
 

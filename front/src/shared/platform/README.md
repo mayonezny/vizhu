@@ -14,14 +14,14 @@
 
 ## Порты
 
-| Порт           | Web                                  | Native (Capacitor)                                        |
-| -------------- | ------------------------------------ | --------------------------------------------------------- |
-| `photoCamera`  | inline: страница сама рендерит getUserMedia-превью | `@capgo/camera-preview` (toBack: нативное превью ПОЗАДИ WebView, наш UI сверху) + галерея через `@capacitor/camera` |
-| `callAlert`    | WebAudio-«дзинь» + вибрация          | тот же WebAudio + нативный haptics; фоновые входящие (push/CallKit) — TODO |
-| `haptics`      | `navigator.vibrate` (iOS Safari — no-op) | `@capacitor/haptics` (работает и на iOS)               |
-| `permissions`  | Permissions API / getUserMedia-проба | camera → плагин Camera, notifications → LocalNotifications; mic/geo — системные диалоги WebView |
-| `stateStorage` | localStorage                         | `@capacitor/preferences`                                   |
-| `secureStorage`| память процесса (не персистится — осознанно) | `capacitor-secure-storage-plugin` (Keychain / EncryptedSharedPreferences) |
+| Порт            | Web                                                | Native (Capacitor)                                                                                                  |
+| --------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `photoCamera`   | inline: страница сама рендерит getUserMedia-превью | `@capgo/camera-preview` (toBack: нативное превью ПОЗАДИ WebView, наш UI сверху) + галерея через `@capacitor/camera` |
+| `callAlert`     | WebAudio-«дзинь» + вибрация                        | тот же WebAudio + нативный haptics; фоновые входящие (push/CallKit) — TODO                                          |
+| `haptics`       | `navigator.vibrate` (iOS Safari — no-op)           | `@capacitor/haptics` (работает и на iOS)                                                                            |
+| `permissions`   | Permissions API / getUserMedia-проба               | camera → плагин Camera, notifications → LocalNotifications; mic/geo — системные диалоги WebView                     |
+| `stateStorage`  | localStorage                                       | `@capacitor/preferences`                                                                                            |
+| `secureStorage` | память процесса (не персистится — осознанно)       | `capacitor-secure-storage-plugin` (Keychain / EncryptedSharedPreferences)                                           |
 
 ## Токены
 
