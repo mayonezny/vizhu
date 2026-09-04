@@ -17,11 +17,11 @@ jobs:
     name: Detect changed services
     runs-on: ubuntu-latest
     outputs:
-      api: ${{ steps.filter.outputs.api }}
-      front: ${{ steps.filter.outputs.front }}
-      landing: ${{ steps.filter.outputs.landing }}
-      ai: ${{ steps.filter.outputs.ai }}
-      infra: ${{ steps.filter.outputs.infra }}
+      api: ${{ steps.filter.outputs.api == 'true' || github.event_name == 'workflow_dispatch' }}
+      front: ${{ steps.filter.outputs.front == 'true' || github.event_name == 'workflow_dispatch' }}
+      landing: ${{ steps.filter.outputs.landing == 'true' || github.event_name == 'workflow_dispatch' }}
+      ai: ${{ steps.filter.outputs.ai == 'true' || github.event_name == 'workflow_dispatch' }}
+      infra: ${{ steps.filter.outputs.infra == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -149,7 +149,7 @@ jobs:
     needs: [detect-changes, test-api]
     if: |
       github.ref == 'refs/heads/main' &&
-      github.event_name == 'push' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       needs.detect-changes.outputs.api == 'true'
     permissions:
       contents: read
@@ -184,7 +184,7 @@ jobs:
     needs: [detect-changes, test-front]
     if: |
       github.ref == 'refs/heads/main' &&
-      github.event_name == 'push' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       needs.detect-changes.outputs.front == 'true'
     permissions:
       contents: read
@@ -219,7 +219,7 @@ jobs:
     needs: [detect-changes, test-landing]
     if: |
       github.ref == 'refs/heads/main' &&
-      github.event_name == 'push' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       needs.detect-changes.outputs.landing == 'true'
     permissions:
       contents: read
@@ -256,7 +256,7 @@ jobs:
     needs: [detect-changes, test-ai]
     if: |
       github.ref == 'refs/heads/main' &&
-      github.event_name == 'push' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       needs.detect-changes.outputs.ai == 'true'
     permissions:
       contents: read
@@ -292,7 +292,7 @@ jobs:
     if: |
       always() &&
       github.ref == 'refs/heads/main' &&
-      github.event_name == 'push' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       (needs.build-api.result == 'success' || needs.build-front.result == 'success' || needs.build-landing.result == 'success' || needs.build-ai.result == 'success' || needs.detect-changes.outputs.infra == 'true')
     environment: production
     steps:
@@ -311,7 +311,10 @@ jobs:
             set -e
             cd ~/vizhu
             git fetch origin main
-            git reset --hard FETCH_HEAD
+            # checkout -B, а не просто reset: на сервере может быть выкачена
+            # чужая ветка, и reset тогда переписал бы ЕЁ содержимым main,
+            # оставив HEAD на прежнем имени. Так гарантируем и ветку, и файлы.
+            git checkout -B main FETCH_HEAD
             git submodule update --init --recursive
             cd infra
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
